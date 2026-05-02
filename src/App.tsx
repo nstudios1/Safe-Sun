@@ -38,7 +38,7 @@ const App = () => (
       <AppProvider>
         <MeshBackground />
         <Sonner position="top-center" theme="dark" toastOptions={{ className: "glass-strong !text-white" }} />
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <Shell />
         </BrowserRouter>
       </AppProvider>
