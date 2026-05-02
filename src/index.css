@@ -171,6 +171,12 @@
 }
 .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
+@keyframes flash-red {
+  0%, 100% { background: hsl(0 90% 35% / 0.9); box-shadow: 0 0 30px hsl(0 95% 55% / 0.7); }
+  50% { background: hsl(0 95% 55% / 0.95); box-shadow: 0 0 60px hsl(0 100% 60% / 1); }
+}
+.animate-flash-red { animation: flash-red 0.9s ease-in-out infinite; }
+
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }

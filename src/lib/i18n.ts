@@ -80,6 +80,10 @@ export const dict = {
     safetyAdj: "Safety-adjusted",
     rawApi: "API raw",
     disclaimer: "This app is for informational purposes only. Always follow local health authorities' advice and use professional-grade sun protection regardless of the app's reading.",
+    tropicalCaution: "Caution: UV levels in tropical areas like Hawaii can change rapidly. When in doubt, seek shade.",
+    flashAlertTitle: "BURN RISK UNDER 20 MIN",
+    flashAlertDesc: "At today's peak UV, your skin will burn in {min} minutes. Cover up immediately.",
+    dailyPeakLabel: "Today's Peak UV (CAMS)",
   },
   es: {
     appName: "Safe Sun",
@@ -160,6 +164,10 @@ export const dict = {
     safetyAdj: "Ajustado por seguridad",
     rawApi: "API original",
     disclaimer: "Esta app es solo informativa. Sigue siempre las indicaciones de las autoridades sanitarias locales y usa protección solar de grado profesional sin importar la lectura de la app.",
+    tropicalCaution: "Precaución: los niveles UV en zonas tropicales como Hawái pueden cambiar rápidamente. Ante la duda, busca sombra.",
+    flashAlertTitle: "RIESGO DE QUEMADURA <20 MIN",
+    flashAlertDesc: "Con el pico UV de hoy, tu piel se quemará en {min} minutos. Cúbrete de inmediato.",
+    dailyPeakLabel: "Pico UV de hoy (CAMS)",
   },
 } as const;
 
