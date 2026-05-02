@@ -6,6 +6,8 @@ import { ProtectionPlan } from "@/components/safesun/ProtectionPlan";
 import { SunscreenTimer } from "@/components/safesun/SunscreenTimer";
 import { VitaminDRing } from "@/components/safesun/VitaminDRing";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
+import { UVAlert } from "@/components/safesun/UVAlert";
+import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { MapPin, RefreshCw } from "lucide-react";
 
 export default function Home() {
@@ -29,6 +31,7 @@ export default function Home() {
 
       {weather ? (
         <div className="space-y-4">
+          <UVAlert />
           <div className="glass-strong p-6 flex flex-col items-center animate-fade-up">
             <UVGauge uv={weather.uv} />
           </div>
@@ -37,6 +40,7 @@ export default function Home() {
           <SunscreenTimer />
           <VitaminDRing />
           <HourlyStrip />
+          <Disclaimer />
         </div>
       ) : (
         <div className="glass p-10 text-center animate-fade-up">{t("loading")}</div>

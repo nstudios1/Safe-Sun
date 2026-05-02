@@ -1,9 +1,9 @@
-export type UVLevel = "low" | "mid" | "high";
+export type UVLevel = "low" | "mid" | "high" | "extreme";
 
 export function uvBucket(uv: number): UVLevel {
   if (uv <= 2) return "low";
   if (uv <= 7) return "mid";
-  return "high";
+  return "extreme";
 }
 
 export function uvRiskKey(uv: number): "riskLow" | "riskMod" | "riskHigh" | "riskVeryHigh" | "riskExtreme" {

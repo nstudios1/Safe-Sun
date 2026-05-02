@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { dict, type DictKey, type Lang } from "@/lib/i18n";
 import { fetchWeather, reverseGeocode, type Geo, type WeatherData } from "@/lib/weather";
-import { uvBucket } from "@/lib/uv";
+import { uvBucket, minutesToBurn } from "@/lib/uv";
 import { toast } from "sonner";
 
 interface User { email: string; name?: string; }
@@ -177,7 +177,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const guest = () => { localStorage.setItem(LS.guest, "1"); setUser({ email: "guest" }); };
 
   const startTimer = () => {
-    const end = Date.now() + 2 * 60 * 60 * 1000;
+    // Strictly limit timer to the user's safe exposure window for current UV/skin type
+    const TWO_H = 2 * 60 * 60 * 1000;
+    let cap = TWO_H;
+    if (weather) {
+      const safeMin = minutesToBurn(weather.uv, skinType);
+      cap = Math.max(60 * 1000, Math.min(TWO_H, safeMin * 60 * 1000));
+    }
+    const end = Date.now() + cap;
     setTimerEndsAt(end);
     localStorage.setItem(LS.timer, JSON.stringify(end));
     if (alertsEnabled && "Notification" in window && Notification.permission === "default") Notification.requestPermission();

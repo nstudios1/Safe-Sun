@@ -138,6 +138,16 @@
   --mesh-2: var(--uv-high-2);
   --mesh-3: var(--uv-high-3);
 }
+.uv-extreme {
+  --mesh-1: 285 90% 30%;
+  --mesh-2: 270 95% 25%;
+  --mesh-3: 320 85% 35%;
+  animation: extreme-pulse 2.5s ease-in-out infinite;
+}
+@keyframes extreme-pulse {
+  0%,100% { background: hsl(270 60% 8%); }
+  50% { background: hsl(285 70% 14%); }
+}
 
 @keyframes float1 {
   0%,100% { transform: translate(0,0) scale(1); }
