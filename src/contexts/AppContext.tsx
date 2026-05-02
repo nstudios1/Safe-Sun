@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { dict, type DictKey, type Lang } from "@/lib/i18n";
 import { fetchWeather, reverseGeocode, type Geo, type WeatherData } from "@/lib/weather";
-import { uvBucket } from "@/lib/uv";
+import { uvBucket, minutesToBurn } from "@/lib/uv";
 import { toast } from "sonner";
 
 interface User { email: string; name?: string; }
@@ -181,7 +181,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const TWO_H = 2 * 60 * 60 * 1000;
     let cap = TWO_H;
     if (weather) {
-      const { minutesToBurn } = require("@/lib/uv");
       const safeMin = minutesToBurn(weather.uv, skinType);
       cap = Math.max(60 * 1000, Math.min(TWO_H, safeMin * 60 * 1000));
     }
