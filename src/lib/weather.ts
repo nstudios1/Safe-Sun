@@ -47,49 +47,50 @@ export async function reverseGeocode(lat: number, lon: number, lang = "en"): Pro
 }
 
 export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
-  // Weather (current + hourly temp) from Open-Meteo forecast
-  const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,cloud_cover&hourly=temperature_2m&timezone=auto&forecast_days=1`;
-  // UV from CAMS (Copernicus Atmosphere Monitoring Service) via Open-Meteo Air Quality API
-  const camsUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=uv_index,uv_index_clear_sky&domains=cams_global&timezone=auto&forecast_days=1`;
-  const [wxR, camsR] = await Promise.all([fetch(wxUrl), fetch(camsUrl)]);
-  const j = await wxR.json();
-  const cams = await camsR.json();
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m&daily=uv_index_max,uv_index_clear_sky_max&timezone=auto&forecast_days=1`;
+  const r = await fetch(url);
+  const j = await r.json();
 
   const hourly: { time: string; uv: number; temp: number }[] = [];
   const times: string[] = j.hourly?.time || [];
-  const camsTimes: string[] = cams.hourly?.time || [];
-  const uvs: number[] = cams.hourly?.uv_index || [];
-  const uvsClear: number[] = cams.hourly?.uv_index_clear_sky || [];
+  const uvs: number[] = j.hourly?.uv_index || [];
+  const uvsClear: number[] = j.hourly?.uv_index_clear_sky || [];
   const temps: number[] = j.hourly?.temperature_2m || [];
-  const nowH = new Date().getHours();
-  const nowIdx = Math.max(0, times.findIndex((t) => new Date(t).getHours() === nowH));
-  const camsNowIdx = Math.max(0, camsTimes.findIndex((t) => new Date(t).getHours() === nowH));
+  const nowIdx = Math.max(0, times.findIndex((t) => new Date(t).getHours() === new Date().getHours()));
   for (let i = nowIdx; i < Math.min(nowIdx + 12, times.length); i++) {
-    const ci = camsNowIdx + (i - nowIdx);
-    const safe = Math.max(uvs[ci] ?? 0, uvsClear[ci] ?? 0);
+    // Use the higher of forecast and clear-sky theoretical max for safety
+    const safe = Math.max(uvs[i] ?? 0, uvsClear[i] ?? 0);
     hourly.push({ time: times[i], uv: safe, temp: temps[i] ?? 0 });
   }
 
-  // Daily peak from CAMS (use clear-sky as worst-case ceiling)
   let peakUV = 0;
-  let peakTime = camsTimes[camsNowIdx] || "";
-  for (let i = 0; i < camsTimes.length; i++) {
+  let peakTime = times[nowIdx] || "";
+  for (let i = 0; i < times.length; i++) {
     const v = Math.max(uvs[i] ?? 0, uvsClear[i] ?? 0);
-    if (v > peakUV) { peakUV = v; peakTime = camsTimes[i]; }
+    if (v > peakUV) {
+      peakUV = v;
+      peakTime = times[i];
+    }
   }
 
   const code: number = j.current?.weather_code ?? 0;
   const cloud: number = j.current?.cloud_cover ?? 0;
-  const currentRaw = uvs[camsNowIdx] ?? 0;
-  // PRIMARY = Daily Maximum UV (worst case for the day, ignoring cloud cover)
-  // Plus a +1.0 safety buffer against sensor inaccuracy
-  const safeUV = Math.max(0, peakUV + 1.0);
+  const currentRaw = j.current?.uv_index ?? 0;
+  const currentClear = j.current?.uv_index_clear_sky ?? 0;
+  const hourCurrent = uvs[nowIdx] ?? 0;
+  const hourClear = uvsClear[nowIdx] ?? 0;
+  // Maximum hourly forecast (use clear-sky max when sky is clear or low cloud)
+  let baseUV = Math.max(currentRaw, hourCurrent);
+  const isClear = code === 0 || cloud < 25;
+  if (isClear) baseUV = Math.max(baseUV, currentClear, hourClear);
+  // Safety margin: +1.5 to avoid under-protection
+  const safeUV = Math.max(0, baseUV + 1.5);
 
   return {
     uv: Math.round(safeUV * 10) / 10,
     uvRaw: currentRaw,
-    uvClearSky: peakUV,
-    uvMax: peakUV,
+    uvClearSky: Math.max(currentClear, j.daily?.uv_index_clear_sky_max?.[0] ?? 0),
+    uvMax: Math.max(j.daily?.uv_index_max?.[0] ?? 0, j.daily?.uv_index_clear_sky_max?.[0] ?? 0),
     temp: j.current?.temperature_2m ?? 0,
     feels: j.current?.apparent_temperature ?? 0,
     humidity: j.current?.relative_humidity_2m ?? 0,

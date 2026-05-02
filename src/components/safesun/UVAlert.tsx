@@ -1,31 +1,12 @@
-import { AlertTriangle, ShieldAlert, Flame } from "lucide-react";
+import { AlertTriangle, ShieldAlert } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { minutesToBurn } from "@/lib/uv";
 
 export function UVAlert() {
   const { weather, skinType, t } = useApp();
-  if (!weather) return null;
-  const peak = weather.peakUV || weather.uv;
-  const min = minutesToBurn(peak, skinType);
-  const flashing = min < 20;
-  const extreme = peak >= 8;
-  const showAlert = peak >= 7 || flashing;
-  if (!showAlert) return null;
-
-  if (flashing) {
-    return (
-      <div role="alert" className="relative overflow-hidden rounded-3xl p-5 border-2 border-[hsl(0_100%_70%)] animate-flash-red text-white animate-fade-up">
-        <div className="flex items-start gap-3">
-          <Flame size={30} className="shrink-0 mt-0.5" />
-          <div>
-            <div className="font-extrabold tracking-wide text-lg leading-tight text-shadow-lg">{t("flashAlertTitle")}</div>
-            <div className="text-sm mt-1 opacity-95">{t("flashAlertDesc").replace("{min}", String(min))}</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  if (!weather || weather.uv < 7) return null;
+  const min = minutesToBurn(weather.uv, skinType);
+  const extreme = weather.uv >= 8;
   const title = extreme ? t("extremeTitle") : t("highWarnTitle");
   const desc = (extreme ? t("extremeDesc") : t("highWarnDesc")).replace("{min}", String(min));
   return (
