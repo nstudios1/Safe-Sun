@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, Globe, LogOut, RefreshCw, User, Download } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
+import { Disclaimer } from "@/components/safesun/Disclaimer";
 
 export default function SettingsPage() {
   const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, logout, user } = useApp();
@@ -67,6 +68,8 @@ export default function SettingsPage() {
       <button onClick={logout} className="w-full glass py-3 font-semibold flex items-center justify-center gap-2 hover:bg-white/15 transition animate-fade-up">
         <LogOut size={16} />{t("logout")}
       </button>
+
+      <Disclaimer />
     </div>
   );
 }

@@ -177,7 +177,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const guest = () => { localStorage.setItem(LS.guest, "1"); setUser({ email: "guest" }); };
 
   const startTimer = () => {
-    const end = Date.now() + 2 * 60 * 60 * 1000;
+    // Strictly limit timer to the user's safe exposure window for current UV/skin type
+    const TWO_H = 2 * 60 * 60 * 1000;
+    let cap = TWO_H;
+    if (weather) {
+      const { minutesToBurn } = require("@/lib/uv");
+      const safeMin = minutesToBurn(weather.uv, skinType);
+      cap = Math.max(60 * 1000, Math.min(TWO_H, safeMin * 60 * 1000));
+    }
+    const end = Date.now() + cap;
     setTimerEndsAt(end);
     localStorage.setItem(LS.timer, JSON.stringify(end));
     if (alertsEnabled && "Notification" in window && Notification.permission === "default") Notification.requestPermission();
