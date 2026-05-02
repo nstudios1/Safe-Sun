@@ -8,8 +8,8 @@
     <meta name="description" content="Safe Sun: real-time UV index, weather & smart sun-protection alerts in a beautiful glass UI." />
     <meta name="author" content="Safe Sun" />
     <meta name="theme-color" content="#0b1220" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
 
     <meta property="og:title" content="Safe Sun — UV Index & Weather PWA" />
     <meta property="og:description" content="Real-time UV index, weather & smart sun-protection alerts." />
@@ -23,6 +23,18 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // GitHub Pages SPA redirect restore
+      (function () {
+        var q = new URLSearchParams(window.location.search);
+        if (q.has('p')) {
+          var p = q.get('p') || '/';
+          var extra = q.get('q');
+          var base = '/Safe-Sun';
+          window.history.replaceState(null, '', base + p + (extra ? '?' + extra : '') + window.location.hash);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

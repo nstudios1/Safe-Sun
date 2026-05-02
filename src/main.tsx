@@ -11,7 +11,7 @@ if ("serviceWorker" in navigator) {
   const isPreview = host.includes("id-preview--") || host.includes("lovableproject.com") || host.includes("lovable.app") && host.includes("preview");
   if (!isInIframe && !isPreview && import.meta.env.PROD) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL }).catch(() => {});
     });
   } else {
     navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
