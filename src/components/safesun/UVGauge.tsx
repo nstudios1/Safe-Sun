@@ -19,17 +19,17 @@ export function UVGauge({ uv }: { uv: number }) {
           WebkitMask: "radial-gradient(circle, transparent 80px, black 82px)",
         }}
       />
-      <div className="absolute inset-6 rounded-full glass flex flex-col items-center justify-center">
-        <div className="text-xs uppercase tracking-[0.2em] opacity-80">{t("uvIndex")}</div>
-        <div className="text-7xl font-bold text-shadow-lg leading-none mt-1" style={{ color }}>
+      <div className="absolute inset-6 rounded-full glass flex flex-col items-center justify-center px-4 text-center">
+        <div className="text-[10px] uppercase tracking-[0.2em] opacity-80">{t("uvIndex")}</div>
+        <div className="text-6xl font-bold text-shadow-lg leading-none mt-0.5" style={{ color }}>
           {uv.toFixed(1)}
         </div>
-        <div className="text-sm font-semibold mt-1 opacity-90">{risk}</div>
-        <div className="text-[10px] uppercase tracking-widest opacity-70 mt-2">
-          {t("timeToBurn")}: <span className="font-bold opacity-100">{minutesToBurn(uv, skinType)} {t("minutes")}</span>
+        <div className="text-xs font-semibold mt-0.5 opacity-90">{risk}</div>
+        <div className="text-[9px] uppercase tracking-wider opacity-70 mt-1.5 leading-tight">
+          {t("timeToBurn")} · <span className="font-bold opacity-100">{minutesToBurn(uv, skinType)}{t("minutes")}</span>
         </div>
         {weather && (
-          <div className="text-[9px] opacity-60 mt-0.5">{t("safetyAdj")} (+1.5) · {t("rawApi")} {weather.uvRaw.toFixed(1)}</div>
+          <div className="text-[8px] opacity-50 mt-0.5 leading-tight">+1.5 · raw {weather.uvRaw.toFixed(1)}</div>
         )}
       </div>
     </div>
