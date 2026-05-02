@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TODO: Set the document title to the name of your application -->
     <title>Safe Sun — UV Index & Weather PWA</title>
     <meta name="description" content="Safe Sun: real-time UV index, weather & smart sun-protection alerts in a beautiful glass UI." />
     <meta name="author" content="Safe Sun" />
@@ -29,13 +30,11 @@
         if (q.has('p')) {
           var p = q.get('p') || '/';
           var extra = q.get('q');
-          // CAMBIO 1: Agregada barra final para corregir la ruta base
-          var base = '/Safe-Sun/'; 
+          var base = '/Safe-Sun';
           window.history.replaceState(null, '', base + p + (extra ? '?' + extra : '') + window.location.hash);
         }
       })();
     </script>
-    <!-- CAMBIO 2: Agregado punto (.) para que la ruta sea relativa y cargue en GitHub Pages -->
-    <script type="module" src="./src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
