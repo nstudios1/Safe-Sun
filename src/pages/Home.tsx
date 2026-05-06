@@ -8,20 +8,27 @@ import { VitaminDRing } from "@/components/safesun/VitaminDRing";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
 import { UVAlert } from "@/components/safesun/UVAlert";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
+import { UserAvatar } from "@/components/safesun/UserAvatar";
+import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
 import { MapPin, RefreshCw } from "lucide-react";
 
 export default function Home() {
-  const { weather, location, useGPS, refresh, loading, t } = useApp();
+  const { weather, location, useGPS, refresh, loading, t, profile } = useApp();
   useEffect(() => { if (!location) useGPS(); }, []); // eslint-disable-line
 
   return (
     <div className="px-4 pt-6 pb-32 max-w-xl mx-auto">
       <header className="flex items-center justify-between mb-5 animate-fade-up">
-        <div>
-          <div className="text-xs uppercase tracking-[0.25em] opacity-80">{t("appName")}</div>
-          <div className="flex items-center gap-1 text-lg font-semibold">
-            <MapPin size={16} className="opacity-80" />
-            <span className="text-shadow">{location?.name || "—"}</span>
+        <div className="flex items-center gap-3 min-w-0">
+          <UserAvatar size={44} />
+          <div className="min-w-0">
+            <div className="text-xs uppercase tracking-[0.2em] opacity-80 truncate">
+              {t("hello")}, {profile?.name}
+            </div>
+            <div className="flex items-center gap-1 text-base font-semibold">
+              <MapPin size={14} className="opacity-80" />
+              <span className="text-shadow truncate">{location?.name || "—"}</span>
+            </div>
           </div>
         </div>
         <button onClick={refresh} className="glass p-3 hover:bg-white/20 transition" aria-label="refresh">
@@ -35,6 +42,7 @@ export default function Home() {
           <div className="glass-strong p-6 flex flex-col items-center animate-fade-up">
             <UVGauge uv={weather.uv} />
           </div>
+          <SafetyMarginToggle />
           <WeatherCard />
           <ProtectionPlan />
           <SunscreenTimer />

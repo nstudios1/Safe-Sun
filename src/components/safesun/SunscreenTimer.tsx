@@ -34,8 +34,14 @@ export function SunscreenTimer() {
           </button>
         </div>
       ) : (
-        <button onClick={startTimer} className="w-full glass-strong py-3 font-semibold flex items-center justify-center gap-2 hover:bg-white/25 transition">
-          <Play size={16} />{t("startTimer")}
+        <button
+          onClick={startTimer}
+          className="w-full glass-strong py-6 px-4 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/25 active:scale-[0.98] transition group"
+        >
+          <Play size={22} className="opacity-90 group-hover:scale-110 transition" />
+          <span className="text-base sm:text-lg font-light tracking-wide leading-snug text-center text-shadow">
+            {t("startTimer")}
+          </span>
         </button>
       )}
     </div>

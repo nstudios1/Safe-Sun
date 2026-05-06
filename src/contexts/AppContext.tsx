@@ -4,17 +4,16 @@ import { fetchWeather, reverseGeocode, type Geo, type WeatherData } from "@/lib/
 import { uvBucket, minutesToBurn } from "@/lib/uv";
 import { toast } from "sonner";
 
-interface User { email: string; name?: string; }
+export interface Profile { name: string; skinType: number; createdAt: number; }
 
 interface AppState {
   lang: Lang;
   setLang: (l: Lang) => void;
   t: (k: DictKey) => string;
-  user: User | null;
-  login: (email: string, password: string) => void;
-  register: (email: string, password: string) => void;
-  logout: () => void;
-  guest: () => void;
+
+  profile: Profile | null;
+  saveProfile: (p: Profile) => void;
+  resetProfile: () => void;
 
   location: Geo | null;
   setLocation: (g: Geo) => void;
@@ -35,7 +34,9 @@ interface AppState {
   autoRefresh: boolean;
   setAutoRefresh: (b: boolean) => void;
 
-  // sunscreen timer
+  safetyMargin: boolean;
+  setSafetyMargin: (b: boolean) => void;
+
   timerEndsAt: number | null;
   startTimer: () => void;
   resetTimer: () => void;
@@ -45,7 +46,7 @@ interface AppState {
 const Ctx = createContext<AppState | null>(null);
 
 const LS = {
-  user: "ss_user",
+  profile: "ss_profile",
   lang: "ss_lang",
   loc: "ss_loc",
   saved: "ss_saved",
@@ -53,7 +54,8 @@ const LS = {
   alerts: "ss_alerts",
   auto: "ss_auto",
   timer: "ss_timer",
-  guest: "ss_guest",
+  safety: "ss_safety",
+  safetyShown: "ss_safety_shown",
 };
 
 function load<T>(k: string, fallback: T): T {
@@ -62,14 +64,18 @@ function load<T>(k: string, fallback: T): T {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => load(LS.lang, "en"));
-  const [user, setUser] = useState<User | null>(() => load(LS.user, null));
+  const [profile, setProfileState] = useState<Profile | null>(() => load(LS.profile, null));
   const [location, setLocationState] = useState<Geo | null>(() => load(LS.loc, null));
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState<Geo[]>(() => load(LS.saved, []));
-  const [skinType, setSkinTypeState] = useState<number>(() => load(LS.skin, 3));
+  const [skinType, setSkinTypeState] = useState<number>(() => {
+    const p = load<Profile | null>(LS.profile, null);
+    return p?.skinType ?? load(LS.skin, 3);
+  });
   const [alertsEnabled, setAlertsState] = useState<boolean>(() => load(LS.alerts, true));
   const [autoRefresh, setAutoRefreshState] = useState<boolean>(() => load(LS.auto, true));
+  const [safetyMargin, setSafetyMarginState] = useState<boolean>(() => load(LS.safety, true));
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(() => load(LS.timer, null));
   const [timerRemaining, setTimerRemaining] = useState(0);
   const lastAlertedRef = useRef<number>(0);
@@ -77,12 +83,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const t = useCallback((k: DictKey) => dict[lang][k] ?? dict.en[k], [lang]);
 
   const setLang = (l: Lang) => { setLangState(l); localStorage.setItem(LS.lang, JSON.stringify(l)); };
-  const setSkinType = (n: number) => { setSkinTypeState(n); localStorage.setItem(LS.skin, JSON.stringify(n)); };
+  const setSkinType = (n: number) => {
+    setSkinTypeState(n);
+    localStorage.setItem(LS.skin, JSON.stringify(n));
+    if (profile) {
+      const next = { ...profile, skinType: n };
+      setProfileState(next);
+      localStorage.setItem(LS.profile, JSON.stringify(next));
+    }
+  };
   const setAlertsEnabled = (b: boolean) => {
     setAlertsState(b); localStorage.setItem(LS.alerts, JSON.stringify(b));
     if (b && "Notification" in window && Notification.permission === "default") Notification.requestPermission();
   };
   const setAutoRefresh = (b: boolean) => { setAutoRefreshState(b); localStorage.setItem(LS.auto, JSON.stringify(b)); };
+  const setSafetyMargin = (b: boolean) => { setSafetyMarginState(b); localStorage.setItem(LS.safety, JSON.stringify(b)); };
+
+  const saveProfile = (p: Profile) => {
+    setProfileState(p);
+    setSkinTypeState(p.skinType);
+    localStorage.setItem(LS.profile, JSON.stringify(p));
+    localStorage.setItem(LS.skin, JSON.stringify(p.skinType));
+  };
+  const resetProfile = () => {
+    setProfileState(null);
+    localStorage.removeItem(LS.profile);
+    localStorage.removeItem(LS.safetyShown);
+  };
 
   const setLocation = (g: Geo) => {
     setLocationState(g);
@@ -93,9 +120,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!location) return;
     setLoading(true);
     try {
-      const w = await fetchWeather(location.lat, location.lon);
+      const w = await fetchWeather(location.lat, location.lon, safetyMargin);
       setWeather(w);
-      // High UV alert
       if (alertsEnabled && w.uv >= 8 && Date.now() - lastAlertedRef.current > 60 * 60 * 1000) {
         lastAlertedRef.current = Date.now();
         toast.warning(t("highUVAlert"), { description: t("highUVMsg") });
@@ -108,19 +134,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [location, alertsEnabled, t]);
+  }, [location, alertsEnabled, safetyMargin, t]);
 
-  // Refresh when location changes
-  useEffect(() => { refresh(); }, [location?.lat, location?.lon]); // eslint-disable-line
+  useEffect(() => { refresh(); }, [location?.lat, location?.lon, safetyMargin]); // eslint-disable-line
 
-  // Auto-refresh interval
   useEffect(() => {
     if (!autoRefresh) return;
     const id = setInterval(() => refresh(), 30 * 60 * 1000);
     return () => clearInterval(id);
   }, [autoRefresh, refresh]);
 
-  // Sunscreen timer ticker
+  // First-launch safety margin notification (after profile is created)
+  useEffect(() => {
+    if (!profile) return;
+    if (localStorage.getItem(LS.safetyShown)) return;
+    if (!safetyMargin) return;
+    const id = setTimeout(() => {
+      toast.success(t("safetyEnabledToast"), { description: t("safetyEnabledToastDesc"), duration: 6000 });
+      localStorage.setItem(LS.safetyShown, "1");
+    }, 800);
+    return () => clearTimeout(id);
+  }, [profile, safetyMargin, t]);
+
   useEffect(() => {
     if (!timerEndsAt) { setTimerRemaining(0); return; }
     const tick = () => {
@@ -166,18 +201,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
   const isSaved = (g: Geo) => saved.some((s) => s.lat === g.lat && s.lon === g.lon);
 
-  const login = (email: string, _pw: string) => {
-    const u = { email };
-    setUser(u);
-    localStorage.setItem(LS.user, JSON.stringify(u));
-    localStorage.removeItem(LS.guest);
-  };
-  const register = (email: string, _pw: string) => login(email, _pw);
-  const logout = () => { setUser(null); localStorage.removeItem(LS.user); localStorage.removeItem(LS.guest); };
-  const guest = () => { localStorage.setItem(LS.guest, "1"); setUser({ email: "guest" }); };
-
   const startTimer = () => {
-    // Strictly limit timer to the user's safe exposure window for current UV/skin type
     const TWO_H = 2 * 60 * 60 * 1000;
     let cap = TWO_H;
     if (weather) {
@@ -192,15 +216,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); };
 
   const value = useMemo<AppState>(() => ({
-    lang, setLang, t, user, login, register, logout, guest,
+    lang, setLang, t,
+    profile, saveProfile, resetProfile,
     location, setLocation, useGPS, weather, loading, refresh,
     saved, toggleSave, isSaved,
     skinType, setSkinType,
     alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh,
+    safetyMargin, setSafetyMargin,
     timerEndsAt, startTimer, resetTimer, timerRemaining,
-  }), [lang, t, user, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, timerEndsAt, timerRemaining, refresh]);
+  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, timerEndsAt, timerRemaining, refresh]);
 
-  // Update mesh background class on body
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";
     document.body.dataset.uv = bucket;

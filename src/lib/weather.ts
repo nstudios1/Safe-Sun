@@ -46,7 +46,7 @@ export async function reverseGeocode(lat: number, lon: number, lang = "en"): Pro
   return { name: `${lat.toFixed(2)}, ${lon.toFixed(2)}`, lat, lon };
 }
 
-export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
+export async function fetchWeather(lat: number, lon: number, safetyMargin: boolean = true): Promise<WeatherData> {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m&daily=uv_index_max,uv_index_clear_sky_max&timezone=auto&forecast_days=1`;
   const r = await fetch(url);
   const j = await r.json();
@@ -83,8 +83,8 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
   let baseUV = Math.max(currentRaw, hourCurrent);
   const isClear = code === 0 || cloud < 25;
   if (isClear) baseUV = Math.max(baseUV, currentClear, hourClear);
-  // Safety margin: +1.5 to avoid under-protection
-  const safeUV = Math.max(0, baseUV + 1.5);
+  // Safety margin: +1.5 to avoid under-protection (toggleable)
+  const safeUV = Math.max(0, baseUV + (safetyMargin ? 1.5 : 0));
 
   return {
     uv: Math.round(safeUV * 10) / 10,

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Bell, Globe, LogOut, RefreshCw, User, Download } from "lucide-react";
+import { Bell, Globe, RefreshCw, User, Download, RotateCcw, ShieldCheck } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
+import { UserAvatar } from "@/components/safesun/UserAvatar";
+import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
 
 export default function SettingsPage() {
-  const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, logout, user } = useApp();
+  const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, profile, resetProfile } = useApp();
   const [deferred, setDeferred] = useState<any>(null);
   const [installed, setInstalled] = useState(false);
 
@@ -33,7 +35,13 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold text-shadow-lg animate-fade-up">{t("settings")}</h1>
 
       <Section icon={<User size={16} />} title={t("profile")}>
-        <div className="text-sm opacity-90 mb-3">{user?.email}</div>
+        <div className="flex items-center gap-3 mb-4">
+          <UserAvatar size={48} />
+          <div>
+            <div className="text-base font-semibold leading-tight">{profile?.name}</div>
+            <div className="text-xs opacity-70">{t("skin" + skinType as any)}</div>
+          </div>
+        </div>
         <div className="text-xs uppercase tracking-widest opacity-80 mb-2">{t("skinType")}</div>
         <div className="grid grid-cols-2 gap-2">
           {skins.map(([n, label]) => (
@@ -43,6 +51,10 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
+      </Section>
+
+      <Section icon={<ShieldCheck size={16} />} title={t("safetyMargin")}>
+        <SafetyMarginToggle />
       </Section>
 
       <Section icon={<Globe size={16} />} title={t("language")}>
@@ -65,8 +77,8 @@ export default function SettingsPage() {
         <Download size={18} />{installed ? t("installed") : t("install")}
       </button>
 
-      <button onClick={logout} className="w-full glass py-3 font-semibold flex items-center justify-center gap-2 hover:bg-white/15 transition animate-fade-up">
-        <LogOut size={16} />{t("logout")}
+      <button onClick={resetProfile} className="w-full glass py-3 font-semibold flex items-center justify-center gap-2 hover:bg-white/15 transition animate-fade-up">
+        <RotateCcw size={16} />{t("resetProfile")}
       </button>
 
       <Disclaimer />
