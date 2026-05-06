@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import { MeshBackground } from "@/components/safesun/MeshBackground";
 import { BottomNav } from "@/components/safesun/BottomNav";
-import Auth from "./pages/Auth";
+import Onboarding from "@/components/safesun/Onboarding";
 import Home from "./pages/Home";
 import SearchPage from "./pages/SearchPage";
 import Insights from "./pages/Insights";
@@ -15,8 +15,8 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function Shell() {
-  const { user } = useApp();
-  if (!user) return <Auth />;
+  const { profile } = useApp();
+  if (!profile) return <Onboarding />;
   return (
     <>
       <Routes>
@@ -24,7 +24,6 @@ function Shell() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/insights" element={<Insights />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/auth" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <BottomNav />
