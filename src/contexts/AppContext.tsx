@@ -247,7 +247,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     safetyMargin, setSafetyMargin,
     timerEndsAt, startTimer, resetTimer, timerRemaining,
     vitDMinutes,
-  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, timerEndsAt, timerRemaining, refresh]);
+  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, timerEndsAt, timerRemaining, refresh, vitDMinutes]);
 
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";
