@@ -14,9 +14,11 @@ export interface WeatherData {
   feels: number;
   humidity: number;
   wind: number;
+  windGust: number;
+  precipProb: number;
   cloudCover: number;
   weatherCode: number;
-  hourly: { time: string; uv: number; temp: number }[];
+  hourly: { time: string; uv: number; temp: number; humidity: number; windGust: number; precipProb: number }[];
   peakUV: number;
   peakTime: string;
 }
@@ -47,20 +49,29 @@ export async function reverseGeocode(lat: number, lon: number, lang = "en"): Pro
 }
 
 export async function fetchWeather(lat: number, lon: number, safetyMargin: boolean = true): Promise<WeatherData> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m&daily=uv_index_max,uv_index_clear_sky_max&timezone=auto&forecast_days=1`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability&daily=uv_index_max,uv_index_clear_sky_max&timezone=auto&forecast_days=1`;
   const r = await fetch(url);
   const j = await r.json();
 
-  const hourly: { time: string; uv: number; temp: number }[] = [];
+  const hourly: WeatherData["hourly"] = [];
   const times: string[] = j.hourly?.time || [];
   const uvs: number[] = j.hourly?.uv_index || [];
   const uvsClear: number[] = j.hourly?.uv_index_clear_sky || [];
   const temps: number[] = j.hourly?.temperature_2m || [];
+  const hums: number[] = j.hourly?.relative_humidity_2m || [];
+  const gusts: number[] = j.hourly?.wind_gusts_10m || [];
+  const precs: number[] = j.hourly?.precipitation_probability || [];
   const nowIdx = Math.max(0, times.findIndex((t) => new Date(t).getHours() === new Date().getHours()));
   for (let i = nowIdx; i < Math.min(nowIdx + 12, times.length); i++) {
-    // Use the higher of forecast and clear-sky theoretical max for safety
     const safe = Math.max(uvs[i] ?? 0, uvsClear[i] ?? 0);
-    hourly.push({ time: times[i], uv: safe, temp: temps[i] ?? 0 });
+    hourly.push({
+      time: times[i],
+      uv: safe,
+      temp: temps[i] ?? 0,
+      humidity: hums[i] ?? 0,
+      windGust: gusts[i] ?? 0,
+      precipProb: precs[i] ?? 0,
+    });
   }
 
   let peakUV = 0;
@@ -95,6 +106,8 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
     feels: j.current?.apparent_temperature ?? 0,
     humidity: j.current?.relative_humidity_2m ?? 0,
     wind: j.current?.wind_speed_10m ?? 0,
+    windGust: j.current?.wind_gusts_10m ?? 0,
+    precipProb: j.current?.precipitation_probability ?? 0,
     cloudCover: cloud,
     weatherCode: code,
     hourly,

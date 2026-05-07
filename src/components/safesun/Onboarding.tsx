@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sun, ArrowRight } from "lucide-react";
+import { Sun, ArrowRight, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 
 const SKIN_TONES = [
@@ -13,12 +13,13 @@ const SKIN_TONES = [
 
 export default function Onboarding() {
   const { t, saveProfile } = useApp();
-  const [step, setStep] = useState<0 | 1>(0);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
   const [name, setName] = useState("");
   const [skin, setSkin] = useState<number>(3);
 
   const next = () => {
     if (step === 0 && name.trim()) setStep(1);
+    else if (step === 1) setStep(2);
   };
   const finish = () => {
     saveProfile({ name: name.trim() || "Friend", skinType: skin, createdAt: Date.now() });
@@ -100,7 +101,7 @@ export default function Onboarding() {
             <div className="text-center text-xs opacity-80">{t(SKIN_TONES.find((s) => s.type === skin)!.label as any)}</div>
 
             <button
-              onClick={finish}
+              onClick={next}
               className="w-full py-3 rounded-2xl font-bold text-shadow-lg flex items-center justify-center gap-2 transition"
               style={{
                 background: "linear-gradient(135deg, hsl(28 100% 60%), hsl(0 85% 55%))",
@@ -108,6 +109,29 @@ export default function Onboarding() {
               }}
             >
               {t("getStarted")} <ArrowRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-5 animate-fade-up text-center">
+            <div
+              className="mx-auto w-16 h-16 rounded-3xl glass-strong flex items-center justify-center"
+              style={{ color: "hsl(45 100% 65%)" }}
+            >
+              <Sparkles size={28} />
+            </div>
+            <h2 className="text-xl font-bold text-shadow-lg">{t("vitDExplainTitle")}</h2>
+            <p className="text-sm opacity-90 leading-relaxed">{t("vitDExplainBody")}</p>
+            <button
+              onClick={finish}
+              className="w-full py-3 rounded-2xl font-bold text-shadow-lg flex items-center justify-center gap-2 transition"
+              style={{
+                background: "linear-gradient(135deg, hsl(28 100% 60%), hsl(0 85% 55%))",
+                boxShadow: "0 10px 30px -8px hsl(28 100% 50% / 0.6)",
+              }}
+            >
+              {t("gotIt")} <ArrowRight size={18} />
             </button>
           </div>
         )}

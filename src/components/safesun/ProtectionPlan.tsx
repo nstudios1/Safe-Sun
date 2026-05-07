@@ -28,11 +28,15 @@ const Sunscreen = () => (
 );
 
 export function ProtectionPlan() {
-  const { t } = useApp();
+  const { t, weather } = useApp();
+  const uv = weather?.uv ?? 0;
+  const tier: "Low" | "Mid" | "High" | "Extreme" =
+    uv >= 8 ? "Extreme" : uv >= 6 ? "High" : uv >= 3 ? "Mid" : "Low";
+  const k = (base: string) => `${base}${tier}` as any;
   const items = [
-    { Icon: PalmShade, title: t("seekShade"), desc: t("seekShadeDesc"), color: "hsl(160 80% 60%)" },
-    { Icon: HatGear, title: t("wearGear"), desc: t("wearGearDesc"), color: "hsl(45 100% 65%)" },
-    { Icon: Sunscreen, title: t("reapply"), desc: t("reapplyDesc"), color: "hsl(28 100% 65%)" },
+    { Icon: PalmShade, title: t("seekShade"), desc: t(k("seekShade")), color: "hsl(160 80% 60%)" },
+    { Icon: HatGear, title: t("wearGear"), desc: t(k("wearGear")), color: "hsl(45 100% 65%)" },
+    { Icon: Sunscreen, title: t("reapply"), desc: t(k("reapply")), color: "hsl(28 100% 65%)" },
   ];
   return (
     <div className="glass p-5 animate-fade-up">
