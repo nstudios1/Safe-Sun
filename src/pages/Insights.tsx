@@ -1,6 +1,7 @@
 import { useApp } from "@/contexts/AppContext";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
 import { minutesToBurn, uvColor } from "@/lib/uv";
+import { Droplets, Wind, CloudRain } from "lucide-react";
 
 export default function Insights() {
   const { weather, skinType, t } = useApp();
@@ -24,6 +25,30 @@ export default function Insights() {
             </div>
           </div>
           <HourlyStrip />
+          <div className="glass p-5 animate-fade-up">
+            <h3 className="text-sm uppercase tracking-widest opacity-80 mb-3">{t("nextHoursDetail")}</h3>
+            <div className="space-y-2">
+              {weather.hourly.map((h, i) => {
+                const d = new Date(h.time);
+                const label = d.getHours().toString().padStart(2, "0") + ":00";
+                const tempF = Math.round((h.temp * 9) / 5 + 32);
+                const gustMph = Math.round(h.windGust * 0.621371);
+                return (
+                  <div key={i} className="rounded-2xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="text-xs font-mono opacity-80 w-12">{label}</div>
+                      <div className="text-base font-semibold">{tempF}°F</div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs opacity-90">
+                      <span className="flex items-center gap-1"><Droplets size={12} />{Math.round(h.humidity)}%</span>
+                      <span className="flex items-center gap-1"><Wind size={12} />{gustMph} mph</span>
+                      <span className="flex items-center gap-1"><CloudRain size={12} />{Math.round(h.precipProb)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </>
       )}
     </div>
