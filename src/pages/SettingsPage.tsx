@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { Bell, Globe, RefreshCw, User, Download, RotateCcw, ShieldCheck, Sun, Waves } from "lucide-react";
+import { Bell, Globe, RefreshCw, User, Download, RotateCcw, ShieldCheck } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { UserAvatar } from "@/components/safesun/UserAvatar";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
-import { SpfSelector } from "@/components/safesun/SpfSelector";
-import { ReflectionToggle } from "@/components/safesun/ReflectionToggle";
 
 export default function SettingsPage() {
   const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, profile, resetProfile } = useApp();
@@ -57,14 +55,6 @@ export default function SettingsPage() {
 
       <Section icon={<ShieldCheck size={16} />} title={t("safetyMargin")}>
         <SafetyMarginToggle />
-      </Section>
-
-      <Section icon={<Sun size={16} />} title={t("spfLabel")}>
-        <SpfSelector />
-      </Section>
-
-      <Section icon={<Waves size={16} />} title={t("reflection")}>
-        <ReflectionToggle />
       </Section>
 
       <Section icon={<Globe size={16} />} title={t("language")}>

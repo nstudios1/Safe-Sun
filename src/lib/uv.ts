@@ -24,20 +24,15 @@ export function uvColor(uv: number): string {
 
 // Minutes to burn (rough) by Fitzpatrick skin type and UV index
 const SKIN_MED: Record<number, number> = { 1: 200, 2: 250, 3: 300, 4: 400, 5: 600, 6: 1000 };
-export function minutesToBurn(uv: number, skinType: number, spf: number = 1, reflection: boolean = false): number {
+export function minutesToBurn(uv: number, skinType: number): number {
   if (uv <= 0) return 999;
   const med = SKIN_MED[skinType] ?? 300;
-  const base = med / (3 * uv);
-  const spfMul = Math.max(1, spf);
-  const reflMul = reflection ? 0.8 : 1; // -20% under reflective surfaces
-  return Math.max(1, Math.round(base * spfMul * reflMul));
+  return Math.round(med / (3 * uv));
 }
 
 // Minutes of exposure to reach daily vitamin D goal
-export function vitaminDMinutes(uv: number, skinType: number, spf: number = 1): number {
+export function vitaminDMinutes(uv: number, skinType: number): number {
   if (uv <= 0) return 0;
   const factor = [0, 1, 1.1, 1.3, 1.6, 2, 2.5][skinType] || 1.3;
-  // Higher SPF blocks UVB → more time needed for synthesis (capped multiplier)
-  const spfMul = 1 + Math.log2(Math.max(1, spf)) * 0.4;
-  return Math.round((25 / uv) * factor * spfMul);
+  return Math.round((25 / uv) * factor);
 }

@@ -10,7 +10,6 @@ import { UVAlert } from "@/components/safesun/UVAlert";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { UserAvatar } from "@/components/safesun/UserAvatar";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
-import { SessionSummary } from "@/components/safesun/SessionSummary";
 import { MapPin, RefreshCw } from "lucide-react";
 
 export default function Home() {
@@ -40,7 +39,6 @@ export default function Home() {
       {weather ? (
         <div className="space-y-4">
           <UVAlert />
-          <SessionSummary />
           <div className="glass-strong p-6 flex flex-col items-center animate-fade-up">
             <UVGauge uv={weather.uv} />
           </div>
