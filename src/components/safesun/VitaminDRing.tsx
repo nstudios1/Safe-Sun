@@ -2,10 +2,10 @@ import { useApp } from "@/contexts/AppContext";
 import { vitaminDMinutes } from "@/lib/uv";
 
 export function VitaminDRing() {
-  const { weather, skinType, t } = useApp();
+  const { weather, skinType, t, vitDMinutes } = useApp();
   if (!weather) return null;
   const goal = Math.max(5, vitaminDMinutes(weather.uv, skinType));
-  const done = Math.min(goal, Math.round(goal * 0.4)); // demo progress
+  const done = Math.min(goal, Math.round(vitDMinutes));
   const pct = goal > 0 ? done / goal : 0;
   const r = 42;
   const c = 2 * Math.PI * r;
