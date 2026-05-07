@@ -41,6 +41,8 @@ interface AppState {
   startTimer: () => void;
   resetTimer: () => void;
   timerRemaining: number;
+
+  vitDMinutes: number;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -56,6 +58,7 @@ const LS = {
   timer: "ss_timer",
   safety: "ss_safety",
   safetyShown: "ss_safety_shown",
+  vitD: "ss_vitd",
 };
 
 function load<T>(k: string, fallback: T): T {
@@ -78,6 +81,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [safetyMargin, setSafetyMarginState] = useState<boolean>(() => load(LS.safety, true));
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(() => load(LS.timer, null));
   const [timerRemaining, setTimerRemaining] = useState(0);
+  const [vitDMinutes, setVitDMinutes] = useState<number>(() => {
+    const v = load<{ date: string; minutes: number }>(LS.vitD, { date: "", minutes: 0 });
+    const today = new Date().toDateString();
+    return v.date === today ? v.minutes : 0;
+  });
+  const lastTickRef = useRef<number | null>(null);
   const lastAlertedRef = useRef<number>(0);
 
   const t = useCallback((k: DictKey) => dict[lang][k] ?? dict.en[k], [lang]);
@@ -161,6 +170,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const tick = () => {
       const r = Math.max(0, timerEndsAt - Date.now());
       setTimerRemaining(r);
+      // accumulate vitamin D minutes while timer active (1s tick = 1/60 min)
+      const now = Date.now();
+      if (lastTickRef.current && r > 0) {
+        const deltaMin = (now - lastTickRef.current) / 60000;
+        setVitDMinutes((prev) => {
+          const today = new Date().toDateString();
+          const next = prev + deltaMin;
+          localStorage.setItem(LS.vitD, JSON.stringify({ date: today, minutes: next }));
+          return next;
+        });
+      }
+      lastTickRef.current = now;
       if (r === 0) {
         toast.success(t("reapplyNow"));
         if ("Notification" in window && Notification.permission === "granted") {
@@ -168,11 +189,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         setTimerEndsAt(null);
         localStorage.removeItem(LS.timer);
+        lastTickRef.current = null;
       }
     };
     tick();
     const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    return () => { clearInterval(id); lastTickRef.current = null; };
   }, [timerEndsAt, t]);
 
   const useGPS = async () => {
@@ -224,6 +246,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh,
     safetyMargin, setSafetyMargin,
     timerEndsAt, startTimer, resetTimer, timerRemaining,
+    vitDMinutes,
   }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, timerEndsAt, timerRemaining, refresh]);
 
   useEffect(() => {
