@@ -2,9 +2,9 @@ import { useApp } from "@/contexts/AppContext";
 import { vitaminDMinutes } from "@/lib/uv";
 
 export function VitaminDRing() {
-  const { weather, skinType, t, vitDMinutes } = useApp();
+  const { weather, skinType, t, vitDMinutes, spf } = useApp();
   if (!weather) return null;
-  const goal = Math.max(5, vitaminDMinutes(weather.uv, skinType));
+  const goal = Math.max(5, vitaminDMinutes(weather.uv, skinType, spf));
   const done = Math.min(goal, Math.round(vitDMinutes));
   const pct = goal > 0 ? done / goal : 0;
   const r = 42;
@@ -32,6 +32,7 @@ export function VitaminDRing() {
         <div className="text-xs uppercase tracking-widest opacity-80">{t("vitaminD")}</div>
         <div className="text-xl font-semibold mt-1">{done} / {goal} {t("minutes")}</div>
         <div className="text-xs opacity-80 mt-1">{t("dailyGoal")}</div>
+        <p className="text-[10px] opacity-60 mt-2 leading-snug max-w-[14rem]">{t("vitDIntegrationNote")}</p>
       </div>
     </div>
   );
