@@ -3,7 +3,7 @@ import { useApp } from "@/contexts/AppContext";
 import { minutesToBurn } from "@/lib/uv";
 
 export function UVGauge({ uv }: { uv: number }) {
-  const { t, skinType, weather } = useApp();
+  const { t, skinType, weather, spf, reflection } = useApp();
   const pct = Math.min(uv / 12, 1);
   const angle = Math.round(pct * 270);
   const color = uvColor(uv);
@@ -26,7 +26,7 @@ export function UVGauge({ uv }: { uv: number }) {
         </div>
         <div className="text-xs font-semibold mt-0.5 opacity-90">{risk}</div>
         <div className="text-[9px] uppercase tracking-wider opacity-70 mt-1.5 leading-tight">
-          {t("timeToBurn")} · <span className="font-bold opacity-100">{minutesToBurn(uv, skinType)}{t("minutes")}</span>
+          {t("timeToBurn")} · <span className="font-bold opacity-100">{minutesToBurn(uv, skinType, spf, reflection)}{t("minutes")}</span>
         </div>
         {weather && (
           <div className="text-[8px] opacity-50 mt-0.5 leading-tight">+1.5 · raw {weather.uvRaw.toFixed(1)}</div>

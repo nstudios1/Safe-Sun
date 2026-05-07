@@ -21,6 +21,11 @@ export interface WeatherData {
   hourly: { time: string; uv: number; temp: number; humidity: number; windGust: number; precipProb: number }[];
   peakUV: number;
   peakTime: string;
+  sunrise: string;
+  sunset: string;
+  timezone: string;
+  utcOffsetSeconds: number;
+  currentTimeISO: string;
 }
 
 export async function geocodeCity(query: string, lang: string = "en"): Promise<Geo[]> {
@@ -49,7 +54,7 @@ export async function reverseGeocode(lat: number, lon: number, lang = "en"): Pro
 }
 
 export async function fetchWeather(lat: number, lon: number, safetyMargin: boolean = true): Promise<WeatherData> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability&daily=uv_index_max,uv_index_clear_sky_max&timezone=auto&forecast_days=1`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability,precipitation&daily=uv_index_max,uv_index_clear_sky_max,sunrise,sunset&timezone=auto&forecast_days=2`;
   const r = await fetch(url);
   const j = await r.json();
 
@@ -61,7 +66,16 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
   const hums: number[] = j.hourly?.relative_humidity_2m || [];
   const gusts: number[] = j.hourly?.wind_gusts_10m || [];
   const precs: number[] = j.hourly?.precipitation_probability || [];
-  const nowIdx = Math.max(0, times.findIndex((t) => new Date(t).getHours() === new Date().getHours()));
+  // Compute "now" in the location's local timezone using API utc offset
+  const utcOffset: number = j.utc_offset_seconds ?? 0;
+  const nowLocalMs = Date.now() + utcOffset * 1000;
+  const nowLocalHourISO = new Date(nowLocalMs).toISOString().slice(0, 13) + ":00";
+  let nowIdx = times.findIndex((t) => t === nowLocalHourISO);
+  if (nowIdx < 0) {
+    // fallback: closest hour not in the past
+    nowIdx = times.findIndex((t) => new Date(t).getTime() >= nowLocalMs - 3600 * 1000);
+  }
+  if (nowIdx < 0) nowIdx = 0;
   for (let i = nowIdx; i < Math.min(nowIdx + 12, times.length); i++) {
     const safe = Math.max(uvs[i] ?? 0, uvsClear[i] ?? 0);
     hourly.push({
@@ -113,6 +127,11 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
     hourly,
     peakUV,
     peakTime,
+    sunrise: j.daily?.sunrise?.[0] ?? "",
+    sunset: j.daily?.sunset?.[0] ?? "",
+    timezone: j.timezone ?? "",
+    utcOffsetSeconds: utcOffset,
+    currentTimeISO: j.current?.time ?? new Date(nowLocalMs).toISOString(),
   };
 }
 

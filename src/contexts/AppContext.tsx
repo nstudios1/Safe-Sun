@@ -5,6 +5,7 @@ import { uvBucket, minutesToBurn } from "@/lib/uv";
 import { toast } from "sonner";
 
 export interface Profile { name: string; skinType: number; createdAt: number; }
+export interface SessionSummary { protectedMin: number; vitDGained: number; endedAt: number; completed: boolean; }
 
 interface AppState {
   lang: Lang;
@@ -37,12 +38,21 @@ interface AppState {
   safetyMargin: boolean;
   setSafetyMargin: (b: boolean) => void;
 
+  spf: number;
+  setSpf: (n: number) => void;
+  reflection: boolean;
+  setReflection: (b: boolean) => void;
+
   timerEndsAt: number | null;
+  timerStartedAt: number | null;
   startTimer: () => void;
   resetTimer: () => void;
   timerRemaining: number;
 
   vitDMinutes: number;
+
+  lastSession: SessionSummary | null;
+  clearLastSession: () => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -56,9 +66,13 @@ const LS = {
   alerts: "ss_alerts",
   auto: "ss_auto",
   timer: "ss_timer",
+  timerStart: "ss_timer_start",
+  vitDStart: "ss_vitd_start",
   safety: "ss_safety",
   safetyShown: "ss_safety_shown",
   vitD: "ss_vitd",
+  spf: "ss_spf",
+  reflection: "ss_reflection",
 };
 
 function load<T>(k: string, fallback: T): T {
@@ -79,13 +93,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [alertsEnabled, setAlertsState] = useState<boolean>(() => load(LS.alerts, true));
   const [autoRefresh, setAutoRefreshState] = useState<boolean>(() => load(LS.auto, true));
   const [safetyMargin, setSafetyMarginState] = useState<boolean>(() => load(LS.safety, true));
+  const [spf, setSpfState] = useState<number>(() => load(LS.spf, 30));
+  const [reflection, setReflectionState] = useState<boolean>(() => load(LS.reflection, false));
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(() => load(LS.timer, null));
+  const [timerStartedAt, setTimerStartedAt] = useState<number | null>(() => load(LS.timerStart, null));
   const [timerRemaining, setTimerRemaining] = useState(0);
   const [vitDMinutes, setVitDMinutes] = useState<number>(() => {
     const v = load<{ date: string; minutes: number }>(LS.vitD, { date: "", minutes: 0 });
     const today = new Date().toDateString();
     return v.date === today ? v.minutes : 0;
   });
+  const [lastSession, setLastSession] = useState<SessionSummary | null>(null);
+  const sessionStartVitDRef = useRef<number>(0);
   const lastTickRef = useRef<number | null>(null);
   const lastAlertedRef = useRef<number>(0);
 
@@ -107,6 +126,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
   const setAutoRefresh = (b: boolean) => { setAutoRefreshState(b); localStorage.setItem(LS.auto, JSON.stringify(b)); };
   const setSafetyMargin = (b: boolean) => { setSafetyMarginState(b); localStorage.setItem(LS.safety, JSON.stringify(b)); };
+  const setSpf = (n: number) => { setSpfState(n); localStorage.setItem(LS.spf, JSON.stringify(n)); };
+  const setReflection = (b: boolean) => { setReflectionState(b); localStorage.setItem(LS.reflection, JSON.stringify(b)); };
+  const clearLastSession = () => setLastSession(null);
 
   const saveProfile = (p: Profile) => {
     setProfileState(p);
@@ -153,6 +175,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, [autoRefresh, refresh]);
 
+  // Continuous GPS watch — auto-update city/weather when user moves significantly (>1km)
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    let lastLat: number | null = location?.lat ?? null;
+    let lastLon: number | null = location?.lon ?? null;
+    const id = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const { latitude: la, longitude: lo } = pos.coords;
+        const movedKm = lastLat != null && lastLon != null
+          ? haversineKm(lastLat, lastLon, la, lo) : Infinity;
+        if (movedKm > 1) {
+          lastLat = la; lastLon = lo;
+          const g = await reverseGeocode(la, lo, lang);
+          setLocationState(g);
+          localStorage.setItem(LS.loc, JSON.stringify(g));
+        }
+      },
+      () => {},
+      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 15_000 }
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, [lang]); // eslint-disable-line
+
   // First-launch safety margin notification (after profile is created)
   useEffect(() => {
     if (!profile) return;
@@ -187,15 +232,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if ("Notification" in window && Notification.permission === "granted") {
           try { new Notification(t("appName"), { body: t("reapplyNow"), icon: "/icon-192.png" }); } catch {}
         }
+        // build session summary
+        const startedAt = timerStartedAt ?? (timerEndsAt - 2 * 60 * 60 * 1000);
+        const protectedMin = Math.max(0, Math.round((Date.now() - startedAt) / 60000));
+        const vitDGained = Math.max(0, Math.round(vitDMinutes - sessionStartVitDRef.current));
+        setLastSession({ protectedMin, vitDGained, endedAt: Date.now(), completed: true });
         setTimerEndsAt(null);
+        setTimerStartedAt(null);
         localStorage.removeItem(LS.timer);
+        localStorage.removeItem(LS.timerStart);
         lastTickRef.current = null;
       }
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => { clearInterval(id); lastTickRef.current = null; };
-  }, [timerEndsAt, t]);
+  }, [timerEndsAt, t]); // eslint-disable-line
 
   const useGPS = async () => {
     if (!("geolocation" in navigator)) { toast.error(t("locationError")); return; }
@@ -227,15 +279,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const TWO_H = 2 * 60 * 60 * 1000;
     let cap = TWO_H;
     if (weather) {
-      const safeMin = minutesToBurn(weather.uv, skinType);
+      const safeMin = minutesToBurn(weather.uv, skinType, spf, reflection);
       cap = Math.max(60 * 1000, Math.min(TWO_H, safeMin * 60 * 1000));
     }
     const end = Date.now() + cap;
+    const start = Date.now();
+    sessionStartVitDRef.current = vitDMinutes;
     setTimerEndsAt(end);
+    setTimerStartedAt(start);
     localStorage.setItem(LS.timer, JSON.stringify(end));
+    localStorage.setItem(LS.timerStart, JSON.stringify(start));
     if (alertsEnabled && "Notification" in window && Notification.permission === "default") Notification.requestPermission();
   };
-  const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); };
+  const resetTimer = () => {
+    if (timerStartedAt) {
+      const protectedMin = Math.max(0, Math.round((Date.now() - timerStartedAt) / 60000));
+      const vitDGained = Math.max(0, Math.round(vitDMinutes - sessionStartVitDRef.current));
+      setLastSession({ protectedMin, vitDGained, endedAt: Date.now(), completed: false });
+    }
+    setTimerEndsAt(null);
+    setTimerStartedAt(null);
+    localStorage.removeItem(LS.timer);
+    localStorage.removeItem(LS.timerStart);
+  };
 
   const value = useMemo<AppState>(() => ({
     lang, setLang, t,
@@ -245,9 +311,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     skinType, setSkinType,
     alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh,
     safetyMargin, setSafetyMargin,
-    timerEndsAt, startTimer, resetTimer, timerRemaining,
+    spf, setSpf, reflection, setReflection,
+    timerEndsAt, timerStartedAt, startTimer, resetTimer, timerRemaining,
     vitDMinutes,
-  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, timerEndsAt, timerRemaining, refresh, vitDMinutes]);
+    lastSession, clearLastSession,
+  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, reflection, timerEndsAt, timerStartedAt, timerRemaining, refresh, vitDMinutes, lastSession]);
 
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";
@@ -261,4 +329,12 @@ export function useApp() {
   const c = useContext(Ctx);
   if (!c) throw new Error("AppProvider missing");
   return c;
+}
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
 }
