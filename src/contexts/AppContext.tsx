@@ -37,6 +37,11 @@ interface AppState {
   safetyMargin: boolean;
   setSafetyMargin: (b: boolean) => void;
 
+  spf: number;
+  setSpf: (n: number) => void;
+  beachMode: boolean;
+  setBeachMode: (b: boolean) => void;
+
   timerEndsAt: number | null;
   startTimer: () => void;
   resetTimer: () => void;
@@ -59,6 +64,8 @@ const LS = {
   safety: "ss_safety",
   safetyShown: "ss_safety_shown",
   vitD: "ss_vitd",
+  spf: "ss_spf",
+  beach: "ss_beach",
 };
 
 function load<T>(k: string, fallback: T): T {
@@ -79,6 +86,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [alertsEnabled, setAlertsState] = useState<boolean>(() => load(LS.alerts, true));
   const [autoRefresh, setAutoRefreshState] = useState<boolean>(() => load(LS.auto, true));
   const [safetyMargin, setSafetyMarginState] = useState<boolean>(() => load(LS.safety, true));
+  const [spf, setSpfState] = useState<number>(() => load(LS.spf, 30));
+  const [beachMode, setBeachModeState] = useState<boolean>(() => load(LS.beach, false));
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(() => load(LS.timer, null));
   const [timerRemaining, setTimerRemaining] = useState(0);
   const [vitDMinutes, setVitDMinutes] = useState<number>(() => {
@@ -107,6 +116,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
   const setAutoRefresh = (b: boolean) => { setAutoRefreshState(b); localStorage.setItem(LS.auto, JSON.stringify(b)); };
   const setSafetyMargin = (b: boolean) => { setSafetyMarginState(b); localStorage.setItem(LS.safety, JSON.stringify(b)); };
+  const setSpf = (n: number) => { setSpfState(n); localStorage.setItem(LS.spf, JSON.stringify(n)); };
+  const setBeachMode = (b: boolean) => { setBeachModeState(b); localStorage.setItem(LS.beach, JSON.stringify(b)); };
 
   const saveProfile = (p: Profile) => {
     setProfileState(p);
@@ -245,9 +256,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     skinType, setSkinType,
     alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh,
     safetyMargin, setSafetyMargin,
+    spf, setSpf, beachMode, setBeachMode,
     timerEndsAt, startTimer, resetTimer, timerRemaining,
     vitDMinutes,
-  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, timerEndsAt, timerRemaining, refresh, vitDMinutes]);
+  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, timerEndsAt, timerRemaining, refresh, vitDMinutes]);
 
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";

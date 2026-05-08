@@ -25,9 +25,18 @@ export default function SearchPage() {
       <div className="glass p-3 flex items-center gap-2 animate-fade-up">
         <SearchIcon size={18} className="opacity-80 ml-1" />
         <input
-          autoFocus value={q} onChange={(e) => search(e.target.value)}
+          autoFocus
+          type="search"
+          inputMode="search"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="words"
+          enterKeyHint="search"
+          value={q}
+          onChange={(e) => search(e.target.value)}
           placeholder={t("searchPlaceholder")}
-          className="flex-1 bg-transparent outline-none placeholder-white/60 py-2"
+          className="flex-1 bg-transparent outline-none placeholder-white/60 py-2 text-base"
+          style={{ fontSize: 16 }}
         />
       </div>
 

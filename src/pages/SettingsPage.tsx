@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Globe, RefreshCw, User, Download, RotateCcw, ShieldCheck } from "lucide-react";
+import { Bell, Globe, User, Download, RotateCcw, ShieldCheck, Droplet, Snowflake, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
@@ -7,7 +7,7 @@ import { UserAvatar } from "@/components/safesun/UserAvatar";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
 
 export default function SettingsPage() {
-  const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, profile, resetProfile } = useApp();
+  const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, profile, resetProfile, spf, setSpf, beachMode, setBeachMode } = useApp();
   const [deferred, setDeferred] = useState<any>(null);
   const [installed, setInstalled] = useState(false);
 
@@ -55,6 +55,27 @@ export default function SettingsPage() {
 
       <Section icon={<ShieldCheck size={16} />} title={t("safetyMargin")}>
         <SafetyMarginToggle />
+      </Section>
+
+      <Section icon={<Droplet size={16} />} title={t("spfCalc")}>
+        <p className="text-xs opacity-80 mb-3">{t("spfHelp")}</p>
+        <div className="grid grid-cols-4 gap-2">
+          {[15, 30, 50, 100].map((n) => (
+            <button key={n} onClick={() => setSpf(n)}
+              className={`px-3 py-2 rounded-xl text-sm font-bold transition ${spf === n ? "bg-white/25 shadow-inner" : "bg-white/5 hover:bg-white/10"}`}>
+              {n}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      <Section icon={<Snowflake size={16} />} title={t("beachMode")}>
+        <p className="text-xs opacity-80 mb-3">{t("beachHelp")}</p>
+        <Toggle label={t("beachMode")} on={beachMode} onChange={setBeachMode} />
+      </Section>
+
+      <Section icon={<Sparkles size={16} />} title={t("vitDEduTitle")}>
+        <p className="text-xs opacity-90 leading-relaxed">{t("vitDEduBody")}</p>
       </Section>
 
       <Section icon={<Globe size={16} />} title={t("language")}>
