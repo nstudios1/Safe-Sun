@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Search as SearchIcon, MapPin, Star, Trash2, Locate } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { geocodeCity, type Geo } from "@/lib/weather";
 
 export default function SearchPage() {
   const { t, lang, setLocation, useGPS, saved, toggleSave, isSaved } = useApp();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Geo[]>([]);
   const [busy, setBusy] = useState(false);
+
+  const focusSearchInput = () => {
+    searchInputRef.current?.focus();
+  };
 
   const search = async (val: string) => {
     setQ(val);
@@ -22,21 +27,25 @@ export default function SearchPage() {
     <div className="px-4 pt-6 pb-32 max-w-xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold text-shadow-lg animate-fade-up">{t("search")}</h1>
 
-      <div className="glass p-3 flex items-center gap-2 animate-fade-up">
+      <div className="glass p-3 flex items-center gap-2 animate-fade-up relative z-[9999] pointer-events-auto select-text">
         <SearchIcon size={18} className="opacity-80 ml-1" />
         <input
+          ref={searchInputRef}
           autoFocus
           type="search"
           inputMode="search"
+          readOnly={false}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="words"
           enterKeyHint="search"
           value={q}
+          onClick={focusSearchInput}
+          onTouchStart={focusSearchInput}
           onChange={(e) => search(e.target.value)}
           placeholder={t("searchPlaceholder")}
-          className="flex-1 bg-transparent outline-none placeholder-white/60 py-2 text-base"
-          style={{ fontSize: 16 }}
+          className="relative z-[9999] pointer-events-auto select-text flex-1 bg-transparent outline-none placeholder-white/60 py-2 text-base"
+          style={{ fontSize: 16, zIndex: 9999 }}
         />
       </div>
 
