@@ -30,9 +30,20 @@ export function minutesToBurn(uv: number, skinType: number): number {
   return Math.round(med / (3 * uv));
 }
 
+// Effective protected burn time, factoring SPF and reflective environments
+export function effectiveBurnMinutes(uv: number, skinType: number, spf: number = 1, beachMode: boolean = false): number {
+  const base = minutesToBurn(uv, skinType);
+  if (base >= 999) return 999;
+  const spfFactor = Math.max(1, spf);
+  const reflect = beachMode ? 0.8 : 1;
+  return Math.max(1, Math.round(base * spfFactor * reflect));
+}
+
 // Minutes of exposure to reach daily vitamin D goal
-export function vitaminDMinutes(uv: number, skinType: number): number {
+export function vitaminDMinutes(uv: number, skinType: number, spf: number = 1): number {
   if (uv <= 0) return 0;
   const factor = [0, 1, 1.1, 1.3, 1.6, 2, 2.5][skinType] || 1.3;
-  return Math.round((25 / uv) * factor);
+  // SPF blocks UVB → reduce synthesis. Higher SPF → much longer needed.
+  const spfFactor = 1 + Math.log2(Math.max(1, spf));
+  return Math.round((25 / uv) * factor * spfFactor);
 }

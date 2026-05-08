@@ -21,6 +21,9 @@ export interface WeatherData {
   hourly: { time: string; uv: number; temp: number; humidity: number; windGust: number; precipProb: number }[];
   peakUV: number;
   peakTime: string;
+  sunrise: string;
+  sunset: string;
+  timezone: string;
 }
 
 export async function geocodeCity(query: string, lang: string = "en"): Promise<Geo[]> {
@@ -49,7 +52,7 @@ export async function reverseGeocode(lat: number, lon: number, lang = "en"): Pro
 }
 
 export async function fetchWeather(lat: number, lon: number, safetyMargin: boolean = true): Promise<WeatherData> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability&daily=uv_index_max,uv_index_clear_sky_max&timezone=auto&forecast_days=1`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability&daily=uv_index_max,uv_index_clear_sky_max,sunrise,sunset&timezone=auto&forecast_days=1`;
   const r = await fetch(url);
   const j = await r.json();
 
@@ -113,6 +116,9 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
     hourly,
     peakUV,
     peakTime,
+    sunrise: j.daily?.sunrise?.[0] ?? "",
+    sunset: j.daily?.sunset?.[0] ?? "",
+    timezone: j.timezone ?? "",
   };
 }
 
