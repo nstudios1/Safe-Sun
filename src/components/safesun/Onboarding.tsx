@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type SyntheticEvent, useRef, useState } from "react";
 import { Sun, ArrowRight, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 
@@ -13,9 +13,15 @@ const SKIN_TONES = [
 
 export default function Onboarding() {
   const { t, saveProfile } = useApp();
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [name, setName] = useState("");
   const [skin, setSkin] = useState<number>(3);
+
+  const focusNameInput = (event?: SyntheticEvent<HTMLInputElement>) => {
+    event?.stopPropagation();
+    (event?.currentTarget ?? nameInputRef.current)?.focus({ preventScroll: true });
+  };
 
   const next = () => {
     if (step === 0 && name.trim()) setStep(1);
@@ -26,8 +32,8 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5">
-      <div className="w-full max-w-md glass-strong p-7 animate-fade-up">
+    <div className="relative z-[9999] pointer-events-auto select-text min-h-screen flex items-center justify-center p-5">
+      <div className="relative z-[9999] pointer-events-auto select-text w-full max-w-md glass-strong p-7 animate-fade-up">
         <div className="flex flex-col items-center mb-6">
           <div
             className="w-16 h-16 rounded-3xl glass-strong flex items-center justify-center mb-3 animate-pulse-glow"
@@ -40,23 +46,28 @@ export default function Onboarding() {
         </div>
 
         {step === 0 && (
-          <div className="space-y-4 animate-fade-up">
-            <div>
+          <div className="space-y-4 animate-fade-up relative z-[9999] pointer-events-auto select-text">
+            <div className="relative z-[9999] pointer-events-auto select-text">
               <label className="text-xs uppercase tracking-widest opacity-80">{t("yourName")}</label>
               <input
+                ref={nameInputRef}
                 autoFocus
                 type="text"
                 inputMode="text"
+                readOnly={false}
                 autoComplete="given-name"
                 autoCorrect="off"
                 autoCapitalize="words"
                 enterKeyHint="next"
                 value={name}
+                onClick={focusNameInput}
+                onTouchStart={focusNameInput}
+                onPointerDown={focusNameInput}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && next()}
                 placeholder={t("yourNamePh")}
-                className="mt-1 w-full px-4 py-3 rounded-2xl bg-white/15 border border-white/25 placeholder-white/50 text-white outline-none focus:bg-white/20 focus:border-white/40 transition text-base"
-                style={{ fontSize: 16 }}
+                className="relative z-[9999] pointer-events-auto select-text mt-1 w-full px-4 py-3 rounded-2xl bg-white/15 border border-white/25 placeholder-white/50 text-white outline-none focus:bg-white/20 focus:border-white/40 transition text-base"
+                style={{ fontSize: 16, zIndex: 9999 }}
               />
             </div>
             <button
