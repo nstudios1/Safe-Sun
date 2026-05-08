@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { type SyntheticEvent, useRef, useState } from "react";
 import { Sun, ArrowRight, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 
@@ -18,7 +18,7 @@ export default function Onboarding() {
   const [name, setName] = useState("");
   const [skin, setSkin] = useState<number>(3);
 
-  const focusNameInput = (event?: React.SyntheticEvent<HTMLInputElement>) => {
+  const focusNameInput = (event?: SyntheticEvent<HTMLInputElement>) => {
     event?.stopPropagation();
     (event?.currentTarget ?? nameInputRef.current)?.focus({ preventScroll: true });
   };
