@@ -10,8 +10,9 @@ export default function SearchPage() {
   const [results, setResults] = useState<Geo[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const focusSearchInput = () => {
-    searchInputRef.current?.focus();
+  const focusSearchInput = (event?: React.SyntheticEvent<HTMLInputElement>) => {
+    event?.stopPropagation();
+    (event?.currentTarget ?? searchInputRef.current)?.focus({ preventScroll: true });
   };
 
   const search = async (val: string) => {
@@ -42,6 +43,7 @@ export default function SearchPage() {
           value={q}
           onClick={focusSearchInput}
           onTouchStart={focusSearchInput}
+          onPointerDown={focusSearchInput}
           onChange={(e) => search(e.target.value)}
           placeholder={t("searchPlaceholder")}
           className="relative z-[9999] pointer-events-auto select-text flex-1 bg-transparent outline-none placeholder-white/60 py-2 text-base"
