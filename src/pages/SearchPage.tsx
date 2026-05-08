@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { type SyntheticEvent, useRef, useState } from "react";
 import { Search as SearchIcon, MapPin, Star, Trash2, Locate } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { geocodeCity, type Geo } from "@/lib/weather";
@@ -10,7 +10,7 @@ export default function SearchPage() {
   const [results, setResults] = useState<Geo[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const focusSearchInput = (event?: React.SyntheticEvent<HTMLInputElement>) => {
+  const focusSearchInput = (event?: SyntheticEvent<HTMLInputElement>) => {
     event?.stopPropagation();
     (event?.currentTarget ?? searchInputRef.current)?.focus({ preventScroll: true });
   };
