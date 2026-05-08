@@ -18,8 +18,9 @@ export default function Onboarding() {
   const [name, setName] = useState("");
   const [skin, setSkin] = useState<number>(3);
 
-  const focusNameInput = () => {
-    nameInputRef.current?.focus();
+  const focusNameInput = (event?: React.SyntheticEvent<HTMLInputElement>) => {
+    event?.stopPropagation();
+    (event?.currentTarget ?? nameInputRef.current)?.focus({ preventScroll: true });
   };
 
   const next = () => {
@@ -31,8 +32,8 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5">
-      <div className="w-full max-w-md glass-strong p-7 animate-fade-up">
+    <div className="relative z-[9999] pointer-events-auto select-text min-h-screen flex items-center justify-center p-5">
+      <div className="relative z-[9999] pointer-events-auto select-text w-full max-w-md glass-strong p-7 animate-fade-up">
         <div className="flex flex-col items-center mb-6">
           <div
             className="w-16 h-16 rounded-3xl glass-strong flex items-center justify-center mb-3 animate-pulse-glow"
@@ -61,6 +62,7 @@ export default function Onboarding() {
                 value={name}
                 onClick={focusNameInput}
                 onTouchStart={focusNameInput}
+                onPointerDown={focusNameInput}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && next()}
                 placeholder={t("yourNamePh")}
