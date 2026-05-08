@@ -183,3 +183,17 @@
 
 /* Safe area */
 .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+
+/* Mobile input fixes — guarantee tap focus + no iOS zoom */
+html { -webkit-text-size-adjust: 100%; }
+body { touch-action: manipulation; }
+input, textarea, select {
+  font-size: 16px;
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+input:focus, textarea:focus { outline: none; }
+/* Mesh background must never intercept taps */
+.mesh-bg, .mesh-bg * { pointer-events: none; }

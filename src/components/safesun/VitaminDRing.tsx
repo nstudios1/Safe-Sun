@@ -2,9 +2,9 @@ import { useApp } from "@/contexts/AppContext";
 import { vitaminDMinutes } from "@/lib/uv";
 
 export function VitaminDRing() {
-  const { weather, skinType, t, vitDMinutes } = useApp();
+  const { weather, skinType, spf, t, vitDMinutes } = useApp();
   if (!weather) return null;
-  const goal = Math.max(5, vitaminDMinutes(weather.uv, skinType));
+  const goal = Math.max(5, vitaminDMinutes(weather.uv, skinType, spf));
   const done = Math.min(goal, Math.round(vitDMinutes));
   const pct = goal > 0 ? done / goal : 0;
   const r = 42;

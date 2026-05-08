@@ -45,11 +45,18 @@ export default function Onboarding() {
               <label className="text-xs uppercase tracking-widest opacity-80">{t("yourName")}</label>
               <input
                 autoFocus
+                type="text"
+                inputMode="text"
+                autoComplete="given-name"
+                autoCorrect="off"
+                autoCapitalize="words"
+                enterKeyHint="next"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && next()}
                 placeholder={t("yourNamePh")}
-                className="mt-1 w-full px-4 py-3 rounded-2xl bg-white/15 border border-white/25 placeholder-white/50 text-white outline-none focus:bg-white/20 focus:border-white/40 transition"
+                className="mt-1 w-full px-4 py-3 rounded-2xl bg-white/15 border border-white/25 placeholder-white/50 text-white outline-none focus:bg-white/20 focus:border-white/40 transition text-base"
+                style={{ fontSize: 16 }}
               />
             </div>
             <button
