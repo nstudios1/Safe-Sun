@@ -1,11 +1,11 @@
 import { useApp } from "@/contexts/AppContext";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
-import { effectiveBurnMinutes, uvColor } from "@/lib/uv";
+import { minutesToBurn, uvColor } from "@/lib/uv";
 import { GoldenHour } from "@/components/safesun/GoldenHour";
 import { Droplets, Wind, CloudRain } from "lucide-react";
 
 export default function Insights() {
-  const { weather, skinType, spf, beachMode, t } = useApp();
+  const { weather, skinType, beachMode, t } = useApp();
 
   return (
     <div className="px-4 pt-6 pb-32 max-w-xl mx-auto space-y-4">
@@ -21,7 +21,10 @@ export default function Insights() {
             </div>
             <div className="glass p-5">
               <div className="text-xs uppercase tracking-widest opacity-80">{t("safeExposure")}</div>
-              <div className="text-4xl font-bold mt-1 text-shadow-lg">{effectiveBurnMinutes(weather.uv, skinType, spf, beachMode)}</div>
+              <div className="text-4xl font-bold mt-1 text-shadow-lg">{(() => {
+                const base = minutesToBurn(weather.uv, skinType);
+                return beachMode ? Math.max(1, Math.round(base * 0.8)) : base;
+              })()}</div>
               <div className="text-xs opacity-80 mt-1">{t("minToBurn")}</div>
             </div>
           </div>
