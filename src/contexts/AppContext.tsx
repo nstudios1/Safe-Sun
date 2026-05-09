@@ -50,7 +50,7 @@ interface AppState {
   vitDMinutes: number;
 }
 
-const Ctx = createContext<AppState | null>(null);
+export const Ctx = createContext<AppState | null>(null);
 
 const LS = {
   profile: "ss_profile",
