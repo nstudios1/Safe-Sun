@@ -1,9 +1,9 @@
 import { useContext } from "react";
-import { AppCtx } from "@/contexts/AppContext";
+import { Ctx } from "@/contexts/AppContext";
 import { uvBucket } from "@/lib/uv";
 
 export function MeshBackground() {
-  const ctx = useContext(AppCtx);
+  const ctx = useContext(Ctx);
   const weather = ctx?.weather ?? null;
   const bucket = weather ? uvBucket(weather.uv) : "low";
   const cls =
