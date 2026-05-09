@@ -64,7 +64,14 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
   const hums: number[] = j.hourly?.relative_humidity_2m || [];
   const gusts: number[] = j.hourly?.wind_gusts_10m || [];
   const precs: number[] = j.hourly?.precipitation_probability || [];
-  const nowIdx = Math.max(0, times.findIndex((t) => new Date(t).getHours() === new Date().getHours()));
+  // Determine the current hour in the LOCATION's timezone (not the browser's).
+  const offsetSec: number = j.utc_offset_seconds ?? 0;
+  const localNow = new Date(Date.now() + offsetSec * 1000);
+  const localHour = localNow.getUTCHours();
+  const localDate = localNow.toISOString().slice(0, 10); // YYYY-MM-DD in location tz
+  let nowIdx = times.findIndex((t) => t.startsWith(localDate) && new Date(t + "Z").getUTCHours() === localHour);
+  if (nowIdx < 0) nowIdx = times.findIndex((t) => new Date(t + "Z").getUTCHours() === localHour);
+  if (nowIdx < 0) nowIdx = 0;
   for (let i = nowIdx; i < Math.min(nowIdx + 12, times.length); i++) {
     const safe = Math.max(uvs[i] ?? 0, uvsClear[i] ?? 0);
     hourly.push({
