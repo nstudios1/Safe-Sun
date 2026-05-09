@@ -1,4 +1,4 @@
-import { uvColor, uvRiskKey, effectiveBurnMinutes } from "@/lib/uv";
+import { uvColor, uvRiskKey, minutesToBurn } from "@/lib/uv";
 import { useApp } from "@/contexts/AppContext";
 
 export function UVGauge({ uv }: { uv: number }) {
@@ -7,7 +7,9 @@ export function UVGauge({ uv }: { uv: number }) {
   const angle = Math.round(pct * 270);
   const color = uvColor(uv);
   const risk = t(uvRiskKey(uv));
-  const burn = effectiveBurnMinutes(uv, skinType, spf, beachMode);
+  // Unprotected time-to-burn (matches the High-UV alert). SPF/Beach shown as context below.
+  const baseBurn = minutesToBurn(uv, skinType);
+  const burn = beachMode ? Math.max(1, Math.round(baseBurn * 0.8)) : baseBurn;
 
   return (
     <div className="relative mx-auto" style={{ width: 240, height: 240 }}>
@@ -29,7 +31,7 @@ export function UVGauge({ uv }: { uv: number }) {
           {t("timeToBurn")} · <span className="font-bold opacity-100">{burn}{t("minutes")}</span>
         </div>
         {weather && (
-          <div className="text-[8px] opacity-50 mt-0.5 leading-tight">SPF {spf}{beachMode ? " · ☀︎" : ""} · raw {weather.uvRaw.toFixed(1)}</div>
+          <div className="text-[8px] opacity-50 mt-0.5 leading-tight">unprotected · SPF {spf}{beachMode ? " · ☀︎" : ""} · raw {weather.uvRaw.toFixed(1)}</div>
         )}
       </div>
     </div>
