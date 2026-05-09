@@ -4,6 +4,58 @@ import { fetchWeather, reverseGeocode, type Geo, type WeatherData } from "@/lib/
 import { uvBucket, minutesToBurn } from "@/lib/uv";
 import { toast } from "sonner";
 
+// Short, loud beep using WebAudio. Falls back silently if blocked.
+function playAlertSound(times = 3) {
+  try {
+    const Ctor = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!Ctor) return;
+    const ac = new Ctor();
+    const beep = (when: number, freq: number) => {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = "sine";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, ac.currentTime + when);
+      g.gain.exponentialRampToValueAtTime(0.6, ac.currentTime + when + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + when + 0.45);
+      o.connect(g).connect(ac.destination);
+      o.start(ac.currentTime + when);
+      o.stop(ac.currentTime + when + 0.5);
+    };
+    for (let i = 0; i < times; i++) beep(i * 0.6, i % 2 ? 880 : 1175);
+    setTimeout(() => ac.close().catch(() => {}), times * 700 + 500);
+  } catch {}
+}
+
+function vibrate(pattern: number | number[]) {
+  try { (navigator as any).vibrate?.(pattern); } catch {}
+}
+
+async function ensureNotificationPermission(): Promise<boolean> {
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") return false;
+  try { const r = await Notification.requestPermission(); return r === "granted"; } catch { return false; }
+}
+
+function fireNotification(title: string, body: string) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    // Prefer SW notification (more reliable on mobile / when tab is hidden)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg) {
+          reg.showNotification(title, { body, icon: "/icon-192.png", badge: "/icon-192.png", vibrate: [300, 150, 300, 150, 600], requireInteraction: true, tag: "safesun" } as any);
+        } else {
+          new Notification(title, { body, icon: "/icon-192.png" });
+        }
+      }).catch(() => { try { new Notification(title, { body, icon: "/icon-192.png" }); } catch {} });
+    } else {
+      new Notification(title, { body, icon: "/icon-192.png" });
+    }
+  } catch {}
+}
+
 export interface Profile { name: string; skinType: number; createdAt: number; }
 
 interface AppState {
@@ -145,9 +197,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (alertsEnabled && w.uv >= 8 && Date.now() - lastAlertedRef.current > 60 * 60 * 1000) {
         lastAlertedRef.current = Date.now();
         toast.warning(t("highUVAlert"), { description: t("highUVMsg") });
-        if ("Notification" in window && Notification.permission === "granted") {
-          try { new Notification(t("highUVAlert"), { body: t("highUVMsg"), icon: "/icon-192.png" }); } catch {}
-        }
+        fireNotification(t("highUVAlert"), t("highUVMsg"));
+        playAlertSound(3);
+        vibrate([400, 200, 400, 200, 800]);
       }
     } catch (e) {
       toast.error("Weather error");
@@ -195,9 +247,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lastTickRef.current = now;
       if (r === 0) {
         toast.success(t("reapplyNow"));
-        if ("Notification" in window && Notification.permission === "granted") {
-          try { new Notification(t("appName"), { body: t("reapplyNow"), icon: "/icon-192.png" }); } catch {}
-        }
+        fireNotification(t("appName"), t("reapplyNow"));
+        playAlertSound(4);
+        vibrate([500, 200, 500, 200, 500, 200, 800]);
         setTimerEndsAt(null);
         localStorage.removeItem(LS.timer);
         lastTickRef.current = null;
@@ -235,6 +287,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const isSaved = (g: Geo) => saved.some((s) => s.lat === g.lat && s.lon === g.lon);
 
   const startTimer = () => {
+    // Ask for OS notification permission as soon as the user interacts (required on iOS/Android)
+    ensureNotificationPermission();
+    // Prime the audio context with a quiet tick so later alerts are allowed by mobile autoplay policies
+    try {
+      const Ctor = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (Ctor) {
+        const ac = new Ctor();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        g.gain.value = 0.0001;
+        o.connect(g).connect(ac.destination);
+        o.start(); o.stop(ac.currentTime + 0.05);
+        setTimeout(() => ac.close().catch(() => {}), 200);
+      }
+    } catch {}
+    vibrate(60);
     const TWO_H = 2 * 60 * 60 * 1000;
     let cap = TWO_H;
     if (weather) {
@@ -244,7 +312,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const end = Date.now() + cap;
     setTimerEndsAt(end);
     localStorage.setItem(LS.timer, JSON.stringify(end));
-    if (alertsEnabled && "Notification" in window && Notification.permission === "default") Notification.requestPermission();
   };
   const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); };
 
