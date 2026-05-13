@@ -58,6 +58,8 @@ function fireNotification(title: string, body: string) {
 
 export interface Profile { name: string; skinType: number; createdAt: number; }
 
+export interface Sunscreen { id: string; name: string; spf: number; }
+
 interface AppState {
   lang: Lang;
   setLang: (l: Lang) => void;
@@ -94,12 +96,21 @@ interface AppState {
   beachMode: boolean;
   setBeachMode: (b: boolean) => void;
 
+  sunscreens: Sunscreen[];
+  activeSunscreenId: string | null;
+  addSunscreen: (s: Omit<Sunscreen, "id">) => void;
+  updateSunscreen: (id: string, s: Partial<Omit<Sunscreen, "id">>) => void;
+  deleteSunscreen: (id: string) => void;
+  setActiveSunscreen: (id: string | null) => void;
+  activeSunscreen: Sunscreen | null;
+
   timerEndsAt: number | null;
   startTimer: () => void;
   resetTimer: () => void;
   timerRemaining: number;
 
   vitDMinutes: number;
+  dailyReapplyCount: number;
 }
 
 export const Ctx = createContext<AppState | null>(null);
@@ -118,6 +129,10 @@ const LS = {
   vitD: "ss_vitd",
   spf: "ss_spf",
   beach: "ss_beach",
+  lockers: "ss_lockers",
+  activeLocker: "ss_active_locker",
+  daily: "ss_daily",
+  lastSummary: "ss_last_summary",
 };
 
 function load<T>(k: string, fallback: T): T {
@@ -140,6 +155,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [safetyMargin, setSafetyMarginState] = useState<boolean>(() => load(LS.safety, true));
   const [spf, setSpfState] = useState<number>(() => load(LS.spf, 30));
   const [beachMode, setBeachModeState] = useState<boolean>(() => load(LS.beach, false));
+  const [sunscreens, setSunscreens] = useState<Sunscreen[]>(() => load(LS.lockers, []));
+  const [activeSunscreenId, setActiveSunscreenIdState] = useState<string | null>(() => load(LS.activeLocker, null));
+  const [dailyReapplyCount, setDailyReapplyCount] = useState<number>(() => {
+    const v = load<{ date: string; count: number }>(LS.daily, { date: "", count: 0 });
+    return v.date === new Date().toDateString() ? v.count : 0;
+  });
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(() => load(LS.timer, null));
   const [timerRemaining, setTimerRemaining] = useState(0);
   const [vitDMinutes, setVitDMinutes] = useState<number>(() => {
@@ -171,6 +192,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setSafetyMargin = (b: boolean) => { setSafetyMarginState(b); localStorage.setItem(LS.safety, JSON.stringify(b)); };
   const setSpf = (n: number) => { setSpfState(n); localStorage.setItem(LS.spf, JSON.stringify(n)); };
   const setBeachMode = (b: boolean) => { setBeachModeState(b); localStorage.setItem(LS.beach, JSON.stringify(b)); };
+
+  const persistLockers = (list: Sunscreen[]) => { setSunscreens(list); localStorage.setItem(LS.lockers, JSON.stringify(list)); };
+  const addSunscreen = (s: Omit<Sunscreen, "id">) => {
+    const item: Sunscreen = { id: Math.random().toString(36).slice(2, 10), ...s };
+    const next = [...sunscreens, item];
+    persistLockers(next);
+    if (!activeSunscreenId) setActiveSunscreen(item.id);
+  };
+  const updateSunscreen = (id: string, patch: Partial<Omit<Sunscreen, "id">>) => {
+    const next = sunscreens.map((p) => (p.id === id ? { ...p, ...patch } : p));
+    persistLockers(next);
+    if (id === activeSunscreenId && patch.spf != null) setSpf(patch.spf);
+  };
+  const deleteSunscreen = (id: string) => {
+    const next = sunscreens.filter((p) => p.id !== id);
+    persistLockers(next);
+    if (id === activeSunscreenId) setActiveSunscreen(next[0]?.id ?? null);
+  };
+  const setActiveSunscreen = (id: string | null) => {
+    setActiveSunscreenIdState(id);
+    localStorage.setItem(LS.activeLocker, JSON.stringify(id));
+    const found = id ? sunscreens.find((p) => p.id === id) : null;
+    if (found) setSpf(found.spf);
+  };
+  const activeSunscreen = sunscreens.find((p) => p.id === activeSunscreenId) ?? null;
 
   const saveProfile = (p: Profile) => {
     setProfileState(p);
@@ -304,10 +350,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
     vibrate(60);
+    // count reapplications when starting after a previous timer expired or was reset
+    setDailyReapplyCount((prev) => {
+      const today = new Date().toDateString();
+      const next = prev + 1;
+      localStorage.setItem(LS.daily, JSON.stringify({ date: today, count: next }));
+      return next;
+    });
     const TWO_H = 2 * 60 * 60 * 1000;
     let cap = TWO_H;
     if (weather) {
-      const safeMin = minutesToBurn(weather.uv, skinType);
+      // factor SPF from active sunscreen into the safe time, capped at 2h
+      const baseMin = minutesToBurn(weather.uv, skinType);
+      const spfMul = Math.max(1, spf);
+      const reflect = beachMode ? 0.8 : 1;
+      const safeMin = baseMin * spfMul * reflect;
       cap = Math.max(60 * 1000, Math.min(TWO_H, safeMin * 60 * 1000));
     }
     timerCapMsRef.current = cap;
@@ -334,6 +391,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(LS.timer, JSON.stringify(end));
   }, [weather?.uv, skinType]); // eslint-disable-line
 
+  // Daily reset at midnight + 6pm summary notification
+  useEffect(() => {
+    let cancelled = false;
+    const schedule = () => {
+      const now = new Date();
+      // 6pm summary
+      const six = new Date(now); six.setHours(18, 0, 0, 0);
+      if (six.getTime() <= now.getTime()) six.setDate(six.getDate() + 1);
+      const lastSummary = localStorage.getItem(LS.lastSummary);
+      const today = now.toDateString();
+      const sixToday = new Date(now); sixToday.setHours(18, 0, 0, 0);
+      if (now.getTime() >= sixToday.getTime() && lastSummary !== today) {
+        // fire immediately if past 6pm and not yet summarised today
+        emitDailySummary();
+        localStorage.setItem(LS.lastSummary, today);
+      }
+      const t1 = setTimeout(() => {
+        if (cancelled) return;
+        emitDailySummary();
+        localStorage.setItem(LS.lastSummary, new Date().toDateString());
+      }, six.getTime() - now.getTime());
+      // midnight reset
+      const mid = new Date(now); mid.setHours(24, 0, 0, 0);
+      const t2 = setTimeout(() => {
+        if (cancelled) return;
+        setVitDMinutes(0);
+        setDailyReapplyCount(0);
+        localStorage.setItem(LS.vitD, JSON.stringify({ date: new Date().toDateString(), minutes: 0 }));
+        localStorage.setItem(LS.daily, JSON.stringify({ date: new Date().toDateString(), count: 0 }));
+      }, mid.getTime() - now.getTime());
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    };
+    const cleanup = schedule();
+    return () => { cancelled = true; cleanup?.(); };
+  }, [vitDMinutes, dailyReapplyCount, weather?.uv, skinType, spf]); // eslint-disable-line
+
+  const emitDailySummary = useCallback(() => {
+    const sun = Math.round(vitDMinutes);
+    const target = weather ? Math.max(1, Math.round((25 / Math.max(1, weather.uv)) * 1.3)) : 15;
+    const vdPct = Math.min(100, Math.round((sun / target) * 100));
+    const expected = Math.max(1, sun / 120);
+    const ratio = dailyReapplyCount / expected;
+    const grade = ratio >= 0.9 ? "A" : ratio >= 0.7 ? "B" : ratio >= 0.5 ? "C" : sun === 0 ? "—" : "D";
+    const body = t("dailySummaryBody")
+      .replace("{sun}", String(sun))
+      .replace("{vd}", String(vdPct))
+      .replace("{grade}", grade);
+    toast.success(t("dailySummaryTitle"), { description: body, duration: 8000 });
+    fireNotification(t("dailySummaryTitle"), body);
+  }, [vitDMinutes, dailyReapplyCount, weather, t]);
+
   const value = useMemo<AppState>(() => ({
     lang, setLang, t,
     profile, saveProfile, resetProfile,
@@ -343,9 +451,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh,
     safetyMargin, setSafetyMargin,
     spf, setSpf, beachMode, setBeachMode,
+    sunscreens, activeSunscreenId, addSunscreen, updateSunscreen, deleteSunscreen, setActiveSunscreen, activeSunscreen,
     timerEndsAt, startTimer, resetTimer, timerRemaining,
-    vitDMinutes,
-  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, timerEndsAt, timerRemaining, refresh, vitDMinutes]);
+    vitDMinutes, dailyReapplyCount,
+  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, sunscreens, activeSunscreenId, timerEndsAt, timerRemaining, refresh, vitDMinutes, dailyReapplyCount]);
 
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";
