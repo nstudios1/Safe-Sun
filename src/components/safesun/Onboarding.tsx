@@ -1,5 +1,5 @@
 import { type SyntheticEvent, useRef, useState } from "react";
-import { Sun, ArrowRight, Sparkles } from "lucide-react";
+import { Sun, ArrowRight, Sparkles, Globe, Gauge, ShieldCheck, Droplet } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 
 const SKIN_TONES = [
@@ -12,9 +12,9 @@ const SKIN_TONES = [
 ] as const;
 
 export default function Onboarding() {
-  const { t, saveProfile } = useApp();
+  const { t, saveProfile, lang, setLang, setSpf, spf } = useApp();
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [step, setStep] = useState<number>(0);
   const [name, setName] = useState("");
   const [skin, setSkin] = useState<number>(3);
 
@@ -23,12 +23,18 @@ export default function Onboarding() {
     (event?.currentTarget ?? nameInputRef.current)?.focus({ preventScroll: true });
   };
 
+  const TOTAL = 8; // 0..7
   const next = () => {
-    if (step === 0 && name.trim()) setStep(1);
-    else if (step === 1) setStep(2);
+    if (step === 1 && !name.trim()) return;
+    setStep((s) => Math.min(TOTAL - 1, s + 1));
   };
   const finish = () => {
     saveProfile({ name: name.trim() || "Friend", skinType: skin, createdAt: Date.now() });
+  };
+
+  const gradientBtn: React.CSSProperties = {
+    background: "linear-gradient(135deg, hsl(28 100% 60%), hsl(0 85% 55%))",
+    boxShadow: "0 10px 30px -8px hsl(28 100% 50% / 0.6)",
   };
 
   return (
@@ -45,7 +51,36 @@ export default function Onboarding() {
           <p className="opacity-90 text-sm mt-1 text-center">{t("onboardingSub")}</p>
         </div>
 
+        <div className="flex justify-center gap-1.5 mb-5">
+          {Array.from({ length: TOTAL }).map((_, i) => (
+            <span key={i} className={`h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-white" : "w-1.5 bg-white/30"}`} />
+          ))}
+        </div>
+
         {step === 0 && (
+          <div className="space-y-5 animate-fade-up text-center">
+            <div className="mx-auto w-14 h-14 rounded-2xl glass-strong flex items-center justify-center" style={{ color: "hsl(180 70% 70%)" }}>
+              <Globe size={26} />
+            </div>
+            <h2 className="text-xl font-bold text-shadow-lg">{t("chooseLanguage")}</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {(["en", "es"] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  className={`px-3 py-3 rounded-2xl text-sm font-semibold transition ${lang === l ? "bg-white/25 shadow-inner" : "bg-white/10 hover:bg-white/15"}`}
+                >
+                  {l === "en" ? "🇬🇧 English" : "🇪🇸 Español"}
+                </button>
+              ))}
+            </div>
+            <button onClick={next} className="w-full py-3 rounded-2xl font-bold text-shadow-lg flex items-center justify-center gap-2 transition" style={gradientBtn}>
+              {t("next")} <ArrowRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {step === 1 && (
           <div className="space-y-4 animate-fade-up relative z-[9999] pointer-events-auto select-text">
             <div className="relative z-[9999] pointer-events-auto select-text">
               <label className="text-xs uppercase tracking-widest opacity-80">{t("yourName")}</label>
@@ -74,17 +109,14 @@ export default function Onboarding() {
               onClick={next}
               disabled={!name.trim()}
               className="w-full py-3 rounded-2xl font-bold text-shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 transition"
-              style={{
-                background: "linear-gradient(135deg, hsl(28 100% 60%), hsl(0 85% 55%))",
-                boxShadow: "0 10px 30px -8px hsl(28 100% 50% / 0.6)",
-              }}
+              style={gradientBtn}
             >
-              {t("getStarted")} <ArrowRight size={18} />
+              {t("next")} <ArrowRight size={18} />
             </button>
           </div>
         )}
 
-        {step === 1 && (
+        {step === 2 && (
           <div className="space-y-5 animate-fade-up">
             <div>
               <div className="text-xs uppercase tracking-widest opacity-80 mb-1">{t("chooseSkinTone")}</div>
@@ -121,17 +153,50 @@ export default function Onboarding() {
             <button
               onClick={next}
               className="w-full py-3 rounded-2xl font-bold text-shadow-lg flex items-center justify-center gap-2 transition"
-              style={{
-                background: "linear-gradient(135deg, hsl(28 100% 60%), hsl(0 85% 55%))",
-                boxShadow: "0 10px 30px -8px hsl(28 100% 50% / 0.6)",
-              }}
+              style={gradientBtn}
             >
-              {t("getStarted")} <ArrowRight size={18} />
+              {t("next")} <ArrowRight size={18} />
             </button>
           </div>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
+          <EduSlide icon={<Gauge size={28} />} color="hsl(28 100% 65%)" title={t("uvScaleTitle")} body={t("uvScaleBody")} onNext={next} label={t("next")} btnStyle={gradientBtn} />
+        )}
+
+        {step === 4 && (
+          <EduSlide icon={<ShieldCheck size={28} />} color="hsl(150 70% 60%)" title={t("missionTitle")} body={t("missionBody")} onNext={next} label={t("next")} btnStyle={gradientBtn} />
+        )}
+
+        {step === 5 && (
+          <EduSlide icon={<Sparkles size={28} />} color="hsl(45 100% 65%)" title={t("vitDLogicTitle")} body={t("vitDLogicBody")} onNext={next} label={t("next")} btnStyle={gradientBtn} />
+        )}
+
+        {step === 6 && (
+          <div className="space-y-5 animate-fade-up text-center">
+            <div className="mx-auto w-14 h-14 rounded-2xl glass-strong flex items-center justify-center" style={{ color: "hsl(200 80% 70%)" }}>
+              <Droplet size={26} />
+            </div>
+            <h2 className="text-xl font-bold text-shadow-lg">{t("spfChooseTitle")}</h2>
+            <p className="text-sm opacity-90 leading-relaxed">{t("spfChooseBody")}</p>
+            <div className="grid grid-cols-4 gap-2">
+              {[15, 30, 50, 100].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setSpf(n)}
+                  className={`px-3 py-3 rounded-xl text-base font-bold transition ${spf === n ? "bg-white/25 shadow-inner" : "bg-white/10 hover:bg-white/15"}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <button onClick={next} className="w-full py-3 rounded-2xl font-bold text-shadow-lg flex items-center justify-center gap-2 transition" style={gradientBtn}>
+              {t("next")} <ArrowRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {step === 7 && (
           <div className="space-y-5 animate-fade-up text-center">
             <div
               className="mx-auto w-16 h-16 rounded-3xl glass-strong flex items-center justify-center"
@@ -139,21 +204,33 @@ export default function Onboarding() {
             >
               <Sparkles size={28} />
             </div>
-            <h2 className="text-xl font-bold text-shadow-lg">{t("vitDExplainTitle")}</h2>
-            <p className="text-sm opacity-90 leading-relaxed">{t("vitDExplainBody")}</p>
+            <h2 className="text-xl font-bold text-shadow-lg">{t("welcomeReadyTitle")}</h2>
+            <p className="text-sm opacity-90 leading-relaxed">{t("welcomeReadyBody")}</p>
             <button
               onClick={finish}
               className="w-full py-3 rounded-2xl font-bold text-shadow-lg flex items-center justify-center gap-2 transition"
-              style={{
-                background: "linear-gradient(135deg, hsl(28 100% 60%), hsl(0 85% 55%))",
-                boxShadow: "0 10px 30px -8px hsl(28 100% 50% / 0.6)",
-              }}
+              style={gradientBtn}
             >
-              {t("gotIt")} <ArrowRight size={18} />
+              {t("letsGo")} <ArrowRight size={18} />
             </button>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function EduSlide({ icon, color, title, body, onNext, label, btnStyle }: { icon: React.ReactNode; color: string; title: string; body: string; onNext: () => void; label: string; btnStyle: React.CSSProperties }) {
+  return (
+    <div className="space-y-5 animate-fade-up text-center">
+      <div className="mx-auto w-14 h-14 rounded-2xl glass-strong flex items-center justify-center" style={{ color }}>
+        {icon}
+      </div>
+      <h2 className="text-xl font-bold text-shadow-lg">{title}</h2>
+      <p className="text-sm opacity-90 leading-relaxed">{body}</p>
+      <button onClick={onNext} className="w-full py-3 rounded-2xl font-bold text-shadow-lg flex items-center justify-center gap-2 transition" style={btnStyle}>
+        {label} <ArrowRight size={18} />
+      </button>
     </div>
   );
 }
