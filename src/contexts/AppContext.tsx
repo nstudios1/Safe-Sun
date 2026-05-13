@@ -198,7 +198,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const item: Sunscreen = { id: Math.random().toString(36).slice(2, 10), ...s };
     const next = [...sunscreens, item];
     persistLockers(next);
-    if (!activeSunscreenId) setActiveSunscreen(item.id);
+    if (!activeSunscreenId) {
+      setActiveSunscreenIdState(item.id);
+      localStorage.setItem(LS.activeLocker, JSON.stringify(item.id));
+      setSpf(item.spf);
+    }
   };
   const updateSunscreen = (id: string, patch: Partial<Omit<Sunscreen, "id">>) => {
     const next = sunscreens.map((p) => (p.id === id ? { ...p, ...patch } : p));
