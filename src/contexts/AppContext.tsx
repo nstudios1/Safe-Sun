@@ -149,6 +149,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
   const lastTickRef = useRef<number | null>(null);
   const lastAlertedRef = useRef<number>(0);
+  const timerCapMsRef = useRef<number | null>(null);
 
   const t = useCallback((k: DictKey) => dict[lang][k] ?? dict.en[k], [lang]);
 
@@ -309,11 +310,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const safeMin = minutesToBurn(weather.uv, skinType);
       cap = Math.max(60 * 1000, Math.min(TWO_H, safeMin * 60 * 1000));
     }
+    timerCapMsRef.current = cap;
     const end = Date.now() + cap;
     setTimerEndsAt(end);
     localStorage.setItem(LS.timer, JSON.stringify(end));
   };
-  const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); };
+  const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); timerCapMsRef.current = null; };
+
+  // Smart timer: when UV changes, scale remaining time so the depletion rate
+  // tracks current UV (higher UV → faster countdown).
+  useEffect(() => {
+    if (!timerEndsAt || !weather) return;
+    const TWO_H = 2 * 60 * 60 * 1000;
+    const newCapMs = Math.max(60 * 1000, Math.min(TWO_H, minutesToBurn(weather.uv, skinType) * 60 * 1000));
+    const prevCapMs = timerCapMsRef.current ?? newCapMs;
+    if (prevCapMs === newCapMs) return;
+    const remaining = Math.max(0, timerEndsAt - Date.now());
+    const fraction = remaining / prevCapMs;
+    const newRemaining = Math.round(newCapMs * fraction);
+    timerCapMsRef.current = newCapMs;
+    const end = Date.now() + newRemaining;
+    setTimerEndsAt(end);
+    localStorage.setItem(LS.timer, JSON.stringify(end));
+  }, [weather?.uv, skinType]); // eslint-disable-line
 
   const value = useMemo<AppState>(() => ({
     lang, setLang, t,
