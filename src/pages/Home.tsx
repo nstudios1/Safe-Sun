@@ -10,10 +10,10 @@ import { UVAlert } from "@/components/safesun/UVAlert";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { UserAvatar } from "@/components/safesun/UserAvatar";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
-import { MapPin, RefreshCw, Shield } from "lucide-react";
+import { MapPin, RefreshCw } from "lucide-react";
 
 export default function Home() {
-  const { weather, location, useGPS, refresh, loading, t, profile, activeSunscreen } = useApp();
+  const { weather, location, useGPS, refresh, loading, t, profile } = useApp();
   useEffect(() => { if (!location) useGPS(); }, []); // eslint-disable-line
 
   return (
@@ -42,14 +42,6 @@ export default function Home() {
           <div className="glass-strong p-6 flex flex-col items-center animate-fade-up">
             <UVGauge uv={weather.uv} />
           </div>
-          {activeSunscreen && (
-            <div className="glass px-4 py-2.5 flex items-center gap-2 text-xs animate-fade-up">
-              <Shield size={14} className="opacity-90" />
-              <span className="opacity-80">{t("activeProtection")}:</span>
-              <span className="font-semibold truncate">{activeSunscreen.name}</span>
-              <span className="ml-auto opacity-90 font-bold">SPF {activeSunscreen.spf}</span>
-            </div>
-          )}
           <SafetyMarginToggle />
           <WeatherCard />
           <ProtectionPlan />
