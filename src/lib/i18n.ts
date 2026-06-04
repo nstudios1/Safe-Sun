@@ -144,6 +144,9 @@ export const dict = {
     noSunscreen: "No Sunscreen",
     protectionNone: "PROTECTION: NONE",
     protectionSpf: "PROTECTION: SPF",
+    waterReminderLow: "Perfect time for a walk!",
+    waterReminderMid: "Stay hydrated. Drink some water!",
+    waterReminderHigh: "Seek shade. Heat stroke risk high!",
   },
   es: {
     appName: "Safe Sun",
@@ -288,6 +291,9 @@ export const dict = {
     noSunscreen: "Sin protector",
     protectionNone: "PROTECCIÓN: NINGUNA",
     protectionSpf: "PROTECCIÓN: SPF",
+    waterReminderLow: "¡Momento perfecto para caminar!",
+    waterReminderMid: "Mantente hidratado. ¡Bebe agua!",
+    waterReminderHigh: "Busca sombra. ¡Riesgo de golpe de calor!",
   },
 } as const;
 
