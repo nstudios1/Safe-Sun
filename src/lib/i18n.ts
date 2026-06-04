@@ -285,6 +285,9 @@ export const dict = {
     welcomeReadyBody: "Safe Sun vigilará el UV por ti. Toca abajo para comenzar.",
     letsGo: "¡Vamos!",
     next: "Siguiente",
+    noSunscreen: "Sin protector",
+    protectionNone: "PROTECCIÓN: NINGUNA",
+    protectionSpf: "PROTECCIÓN: SPF",
   },
 } as const;
 
