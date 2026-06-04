@@ -7,7 +7,7 @@ import { UserAvatar } from "@/components/safesun/UserAvatar";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
 
 export default function SettingsPage() {
-  const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, profile, resetProfile, spf, setSpf, beachMode, setBeachMode } = useApp();
+  const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, profile, resetProfile, spf, setSpf, beachMode, setBeachMode, triggerDangerPulse } = useApp();
   const [deferred, setDeferred] = useState<any>(null);
   const [installed, setInstalled] = useState(false);
 
@@ -84,7 +84,7 @@ export default function SettingsPage() {
           style={{ fontSize: 16 }}
         />
         <button
-          onClick={() => setSpf(0)}
+          onClick={() => { setSpf(0); triggerDangerPulse(); }}
           className={`w-full px-3 py-3 rounded-2xl text-sm font-bold transition ${spf === 0 ? "bg-[hsl(0_85%_55%)]/30 shadow-inner border border-[hsl(0_85%_55%)]/60" : "bg-white/5 hover:bg-white/10 border border-white/15"}`}
         >
           {t("noSunscreen")}
