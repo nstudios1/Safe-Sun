@@ -59,7 +59,7 @@ export default function SettingsPage() {
 
       <Section icon={<Droplet size={16} />} title={t("spfCalc")}>
         <p className="text-xs opacity-80 mb-3">{t("spfHelp")}</p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-2 mb-3">
           {[15, 30, 50, 100].map((n) => (
             <button key={n} onClick={() => setSpf(n)}
               className={`px-3 py-2 rounded-xl text-sm font-bold transition ${spf === n ? "bg-white/25 shadow-inner" : "bg-white/5 hover:bg-white/10"}`}>
@@ -67,6 +67,28 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={100}
+          value={spf === 0 ? "" : spf}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === "") { setSpf(0); return; }
+            const n = parseInt(v, 10);
+            setSpf(Number.isFinite(n) ? n : 0);
+          }}
+          placeholder="0"
+          className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 placeholder-white/50 text-white outline-none focus:bg-white/15 focus:border-white/40 transition text-base mb-2"
+          style={{ fontSize: 16 }}
+        />
+        <button
+          onClick={() => setSpf(0)}
+          className={`w-full px-3 py-3 rounded-2xl text-sm font-bold transition ${spf === 0 ? "bg-[hsl(0_85%_55%)]/30 shadow-inner border border-[hsl(0_85%_55%)]/60" : "bg-white/5 hover:bg-white/10 border border-white/15"}`}
+        >
+          {t("noSunscreen")}
+        </button>
       </Section>
 
       <Section icon={<Snowflake size={16} />} title={t("beachMode")}>
