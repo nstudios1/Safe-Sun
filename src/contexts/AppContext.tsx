@@ -138,7 +138,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [alertsEnabled, setAlertsState] = useState<boolean>(() => load(LS.alerts, true));
   const [autoRefresh, setAutoRefreshState] = useState<boolean>(() => load(LS.auto, true));
   const [safetyMargin, setSafetyMarginState] = useState<boolean>(() => load(LS.safety, true));
-  const [spf, setSpfState] = useState<number>(() => load(LS.spf, 30));
+  const [spf, setSpfState] = useState<number>(() => load(LS.spf, 0));
   const [beachMode, setBeachModeState] = useState<boolean>(() => load(LS.beach, false));
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(() => load(LS.timer, null));
   const [timerRemaining, setTimerRemaining] = useState(0);
@@ -169,7 +169,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
   const setAutoRefresh = (b: boolean) => { setAutoRefreshState(b); localStorage.setItem(LS.auto, JSON.stringify(b)); };
   const setSafetyMargin = (b: boolean) => { setSafetyMarginState(b); localStorage.setItem(LS.safety, JSON.stringify(b)); };
-  const setSpf = (n: number) => { setSpfState(n); localStorage.setItem(LS.spf, JSON.stringify(n)); };
+  const setSpf = (n: number) => {
+    const v = Number.isFinite(n) && n > 0 ? n : 0;
+    setSpfState(v);
+    localStorage.setItem(LS.spf, JSON.stringify(v));
+  };
   const setBeachMode = (b: boolean) => { setBeachModeState(b); localStorage.setItem(LS.beach, JSON.stringify(b)); };
 
   const saveProfile = (p: Profile) => {
@@ -272,10 +276,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           resolve();
         },
         () => { toast.error(t("locationError")); setLoading(false); resolve(); },
-        { timeout: 8000 }
+        { timeout: 8000, maximumAge: 0, enableHighAccuracy: true }
       );
     });
   };
+
+  // Force GPS sync on app open and whenever the app returns to the foreground.
+  useEffect(() => {
+    useGPS();
+    const onVis = () => { if (document.visibilityState === "visible") useGPS(); };
+    const onFocus = () => useGPS();
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []); // eslint-disable-line
 
   const toggleSave = (g: Geo) => {
     setSaved((prev) => {
