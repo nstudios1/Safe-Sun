@@ -13,8 +13,9 @@ import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
 import { MapPin, RefreshCw } from "lucide-react";
 
 export default function Home() {
-  const { weather, location, useGPS, refresh, loading, t, profile } = useApp();
+  const { weather, location, useGPS, refresh, loading, t, profile, spf } = useApp();
   useEffect(() => { if (!location) useGPS(); }, []); // eslint-disable-line
+  const noProtection = !spf || spf <= 0;
 
   return (
     <div className="px-4 pt-6 pb-32 max-w-xl mx-auto">
@@ -39,6 +40,23 @@ export default function Home() {
       {weather ? (
         <div className="space-y-4">
           <UVAlert />
+          <div
+            className="glass px-4 py-3 flex items-center justify-center text-center text-sm font-bold tracking-widest uppercase animate-fade-up"
+            style={
+              noProtection
+                ? {
+                    color: "hsl(15 100% 70%)",
+                    textShadow: "0 0 12px hsl(15 100% 55% / 0.9), 0 0 24px hsl(0 85% 55% / 0.6)",
+                    boxShadow: "0 0 24px hsl(15 100% 55% / 0.35), inset 0 0 0 1px hsl(15 100% 60% / 0.4)",
+                  }
+                : {
+                    color: "hsl(150 70% 70%)",
+                    textShadow: "0 0 10px hsl(150 70% 50% / 0.6)",
+                  }
+            }
+          >
+            {noProtection ? t("protectionNone") : `${t("protectionSpf")} ${spf}`}
+          </div>
           <div className="glass-strong p-6 flex flex-col items-center animate-fade-up">
             <UVGauge uv={weather.uv} />
           </div>
