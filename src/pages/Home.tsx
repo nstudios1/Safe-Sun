@@ -73,7 +73,7 @@ export default function Home() {
           <ProtectionPlan />
           <SunscreenTimer />
           {waterText && (
-            <div className="text-center text-xs font-medium tracking-wide opacity-90 -mt-2 mb-1" style={{ textShadow: "0 1px 8px hsl(0 0% 0% / 0.4)" }}>
+            <div className="text-center text-xs font-medium tracking-wide opacity-90 py-1" style={{ textShadow: "0 1px 8px hsl(0 0% 0% / 0.4)" }}>
               {waterText}
             </div>
           )}
