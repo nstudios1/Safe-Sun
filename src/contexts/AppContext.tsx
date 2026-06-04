@@ -100,6 +100,9 @@ interface AppState {
   timerRemaining: number;
 
   vitDMinutes: number;
+
+  dangerPulse: boolean;
+  triggerDangerPulse: () => void;
 }
 
 export const Ctx = createContext<AppState | null>(null);
@@ -147,6 +150,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const today = new Date().toDateString();
     return v.date === today ? v.minutes : 0;
   });
+  const [dangerPulse, setDangerPulse] = useState(false);
   const lastTickRef = useRef<number | null>(null);
   const lastAlertedRef = useRef<number>(0);
   const timerCapMsRef = useRef<number | null>(null);
