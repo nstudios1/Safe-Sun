@@ -13,9 +13,17 @@ import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
 import { MapPin, RefreshCw } from "lucide-react";
 
 export default function Home() {
-  const { weather, location, useGPS, refresh, loading, t, profile, spf } = useApp();
+  const { weather, location, useGPS, refresh, loading, t, profile, spf, dangerPulse } = useApp();
   useEffect(() => { if (!location) useGPS(); }, []); // eslint-disable-line
   const noProtection = !spf || spf <= 0;
+
+  const waterText = (() => {
+    if (!weather) return null;
+    const uv = weather.uv;
+    if (uv <= 2) return t("waterReminderLow");
+    if (uv <= 7) return t("waterReminderMid");
+    return t("waterReminderHigh");
+  })();
 
   return (
     <div className="px-4 pt-6 pb-32 max-w-xl mx-auto">
@@ -41,7 +49,7 @@ export default function Home() {
         <div className="space-y-4">
           <UVAlert />
           <div
-            className="glass px-4 py-3 flex items-center justify-center text-center text-sm font-bold tracking-widest uppercase animate-fade-up"
+            className={`glass px-4 py-3 flex items-center justify-center text-center text-sm font-bold tracking-widest uppercase animate-fade-up ${dangerPulse ? "animate-shake-danger animate-pulse-danger" : ""}`}
             style={
               noProtection
                 ? {
@@ -64,6 +72,11 @@ export default function Home() {
           <WeatherCard />
           <ProtectionPlan />
           <SunscreenTimer />
+          {waterText && (
+            <div className="text-center text-xs font-medium tracking-wide opacity-90 -mt-2 mb-1" style={{ textShadow: "0 1px 8px hsl(0 0% 0% / 0.4)" }}>
+              {waterText}
+            </div>
+          )}
           <VitaminDRing />
           <HourlyStrip />
           <Disclaimer />
