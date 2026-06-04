@@ -179,6 +179,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(LS.spf, JSON.stringify(v));
   };
   const setBeachMode = (b: boolean) => { setBeachModeState(b); localStorage.setItem(LS.beach, JSON.stringify(b)); };
+  const triggerDangerPulse = () => {
+    setDangerPulse(true);
+    vibrate([80, 40, 80, 40, 80]);
+    setTimeout(() => setDangerPulse(false), 600);
+  };
 
   const saveProfile = (p: Profile) => {
     setProfileState(p);
@@ -366,7 +371,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     spf, setSpf, beachMode, setBeachMode,
     timerEndsAt, startTimer, resetTimer, timerRemaining,
     vitDMinutes,
-  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, timerEndsAt, timerRemaining, refresh, vitDMinutes]);
+    dangerPulse, triggerDangerPulse,
+  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, timerEndsAt, timerRemaining, refresh, vitDMinutes, dangerPulse]);
 
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";
