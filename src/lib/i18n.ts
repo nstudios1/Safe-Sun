@@ -141,6 +141,9 @@ export const dict = {
     welcomeReadyBody: "Safe Sun will keep an eye on the UV for you. Tap below to start.",
     letsGo: "Let's go",
     next: "Next",
+    noSunscreen: "No Sunscreen",
+    protectionNone: "PROTECTION: NONE",
+    protectionSpf: "PROTECTION: SPF",
   },
   es: {
     appName: "Safe Sun",
