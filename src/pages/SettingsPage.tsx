@@ -120,7 +120,11 @@ export default function SettingsPage() {
         <Download size={18} />{installed ? t("installed") : t("install")}
       </button>
 
-      <button onClick={resetProfile} className="w-full glass py-3 font-semibold flex items-center justify-center gap-2 hover:bg-white/15 transition animate-fade-up">
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetProfile(); toast.success(t("resetProfile")); }}
+        className="w-full glass py-3 font-semibold flex items-center justify-center gap-2 hover:bg-white/15 active:scale-[0.98] transition animate-fade-up touch-manipulation cursor-pointer select-none"
+      >
         <RotateCcw size={16} />{t("resetProfile")}
       </button>
 

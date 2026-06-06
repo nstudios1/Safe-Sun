@@ -192,9 +192,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(LS.skin, JSON.stringify(p.skinType));
   };
   const resetProfile = () => {
+    try {
+      [LS.profile, LS.skin, LS.spf, LS.timer, LS.vitD, LS.safetyShown, LS.beach].forEach((k) => localStorage.removeItem(k));
+    } catch {}
     setProfileState(null);
-    localStorage.removeItem(LS.profile);
-    localStorage.removeItem(LS.safetyShown);
+    setSkinTypeState(3);
+    setSpfState(0);
+    setBeachModeState(false);
+    setTimerEndsAt(null);
+    timerCapMsRef.current = null;
+    setVitDMinutes(0);
+    try { window.history.replaceState(null, "", "/"); } catch {}
   };
 
   const setLocation = (g: Geo) => {
