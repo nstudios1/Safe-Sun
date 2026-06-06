@@ -5,11 +5,20 @@ import { toast } from "sonner";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { UserAvatar } from "@/components/safesun/UserAvatar";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+} from "@/components/ui/alert-dialog";
 
 export default function SettingsPage() {
   const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, profile, resetProfile, spf, setSpf, beachMode, setBeachMode, triggerDangerPulse } = useApp();
   const [deferred, setDeferred] = useState<any>(null);
   const [installed, setInstalled] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   useEffect(() => {
     const h = (e: any) => { e.preventDefault(); setDeferred(e); };
@@ -122,11 +131,36 @@ export default function SettingsPage() {
 
       <button
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetProfile(); toast.success(t("resetProfile")); }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowResetDialog(true); }}
         className="w-full glass py-3 font-semibold flex items-center justify-center gap-2 hover:bg-white/15 active:scale-[0.98] transition animate-fade-up touch-manipulation cursor-pointer select-none"
       >
         <RotateCcw size={16} />{t("resetProfile")}
       </button>
+
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent className="glass-strong border-white/20 rounded-3xl max-w-xs sm:max-w-sm text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">{t("resetConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              {t("resetConfirmDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row gap-2 mt-4">
+            <button
+              onClick={() => setShowResetDialog(false)}
+              className="flex-1 glass py-2.5 rounded-2xl text-sm font-semibold hover:bg-white/15 transition active:scale-[0.98] touch-manipulation"
+            >
+              {t("cancel")}
+            </button>
+            <button
+              onClick={() => { setShowResetDialog(false); resetProfile(); toast.success(t("resetProfile")); }}
+              className="flex-1 py-2.5 rounded-2xl text-sm font-semibold bg-[hsl(0_85%_55%)]/80 hover:bg-[hsl(0_85%_55%)] transition active:scale-[0.98] touch-manipulation text-white"
+            >
+              {t("confirmReset")}
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Disclaimer />
     </div>

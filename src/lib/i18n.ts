@@ -147,6 +147,10 @@ export const dict = {
     waterReminderLow: "Perfect time for a walk!",
     waterReminderMid: "Stay hydrated. Drink some water!",
     waterReminderHigh: "Seek shade. Heat stroke risk high!",
+    resetConfirmTitle: "Reset Profile?",
+    resetConfirmDesc: "This will erase all your saved data including skin type, SPF and locations. This action cannot be undone.",
+    cancel: "Cancel",
+    confirmReset: "Reset",
   },
   es: {
     appName: "Safe Sun",
@@ -294,6 +298,10 @@ export const dict = {
     waterReminderLow: "¡Momento perfecto para caminar!",
     waterReminderMid: "Mantente hidratado. ¡Bebe agua!",
     waterReminderHigh: "Busca sombra. ¡Riesgo de golpe de calor!",
+    resetConfirmTitle: "¿Restablecer perfil?",
+    resetConfirmDesc: "Esto borrará todos tus datos guardados, incluyendo tipo de piel, SPF y ubicaciones. Esta acción no se puede deshacer.",
+    cancel: "Cancelar",
+    confirmReset: "Restablecer",
   },
 } as const;
 
