@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const { t, lang, setLang, skinType, setSkinType, alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh, profile, resetProfile, spf, setSpf, beachMode, setBeachMode, triggerDangerPulse } = useApp();
   const [deferred, setDeferred] = useState<any>(null);
   const [installed, setInstalled] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   useEffect(() => {
     const h = (e: any) => { e.preventDefault(); setDeferred(e); };
