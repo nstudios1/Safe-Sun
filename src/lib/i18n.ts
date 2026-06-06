@@ -298,6 +298,10 @@ export const dict = {
     waterReminderLow: "¡Momento perfecto para caminar!",
     waterReminderMid: "Mantente hidratado. ¡Bebe agua!",
     waterReminderHigh: "Busca sombra. ¡Riesgo de golpe de calor!",
+    resetConfirmTitle: "¿Restablecer perfil?",
+    resetConfirmDesc: "Esto borrará todos tus datos guardados, incluyendo tipo de piel, SPF y ubicaciones. Esta acción no se puede deshacer.",
+    cancel: "Cancelar",
+    confirmReset: "Restablecer",
   },
 } as const;
 
