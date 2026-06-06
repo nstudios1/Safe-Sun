@@ -147,6 +147,10 @@ export const dict = {
     waterReminderLow: "Perfect time for a walk!",
     waterReminderMid: "Stay hydrated. Drink some water!",
     waterReminderHigh: "Seek shade. Heat stroke risk high!",
+    resetConfirmTitle: "Reset Profile?",
+    resetConfirmDesc: "This will erase all your saved data including skin type, SPF and locations. This action cannot be undone.",
+    cancel: "Cancel",
+    confirmReset: "Reset",
   },
   es: {
     appName: "Safe Sun",
