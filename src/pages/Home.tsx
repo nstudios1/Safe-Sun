@@ -8,7 +8,6 @@ import { UVStatusTitle } from "@/components/safesun/UVStatusTitle";
 import { HydrationCard } from "@/components/safesun/HydrationCard";
 import { VitaminDRing } from "@/components/safesun/VitaminDRing";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
-import { UVAlert } from "@/components/safesun/UVAlert";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { UserAvatar } from "@/components/safesun/UserAvatar";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
@@ -41,7 +40,6 @@ export default function Home() {
 
       {weather ? (
         <div className="space-y-4">
-          <UVAlert />
           <UVStatusTitle />
           <div
             className={`glass px-4 py-3 flex items-center justify-center text-center text-sm font-bold tracking-widest uppercase animate-fade-up ${dangerPulse ? "animate-shake-danger animate-pulse-danger" : ""}`}
