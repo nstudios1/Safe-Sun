@@ -4,6 +4,8 @@ import { UVGauge } from "@/components/safesun/UVGauge";
 import { WeatherCard } from "@/components/safesun/WeatherCard";
 import { ProtectionPlan } from "@/components/safesun/ProtectionPlan";
 import { SunscreenTimer } from "@/components/safesun/SunscreenTimer";
+import { UVStatusTitle } from "@/components/safesun/UVStatusTitle";
+import { HydrationCard } from "@/components/safesun/HydrationCard";
 import { VitaminDRing } from "@/components/safesun/VitaminDRing";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
 import { UVAlert } from "@/components/safesun/UVAlert";
@@ -16,14 +18,6 @@ export default function Home() {
   const { weather, location, useGPS, refresh, loading, t, profile, spf, dangerPulse } = useApp();
   useEffect(() => { if (!location) useGPS(); }, []); // eslint-disable-line
   const noProtection = !spf || spf <= 0;
-
-  const waterText = (() => {
-    if (!weather) return null;
-    const uv = weather.uv;
-    if (uv <= 2) return t("waterReminderLow");
-    if (uv <= 7) return t("waterReminderMid");
-    return t("waterReminderHigh");
-  })();
 
   return (
     <div className="px-4 pt-6 pb-32 max-w-xl mx-auto">
@@ -48,6 +42,7 @@ export default function Home() {
       {weather ? (
         <div className="space-y-4">
           <UVAlert />
+          <UVStatusTitle />
           <div
             className={`glass px-4 py-3 flex items-center justify-center text-center text-sm font-bold tracking-widest uppercase animate-fade-up ${dangerPulse ? "animate-shake-danger animate-pulse-danger" : ""}`}
             style={
@@ -72,11 +67,7 @@ export default function Home() {
           <WeatherCard />
           <ProtectionPlan />
           <SunscreenTimer />
-          {waterText && (
-            <div className="text-center text-xs font-medium tracking-wide opacity-90 py-1" style={{ textShadow: "0 1px 8px hsl(0 0% 0% / 0.4)" }}>
-              {waterText}
-            </div>
-          )}
+          <HydrationCard />
           <VitaminDRing />
           <HourlyStrip />
           <Disclaimer />
