@@ -164,6 +164,8 @@ export const dict = {
     hydration: "Hydration",
     hydrationGoal: "Daily water goal",
     glasses: "glasses",
+    passed: "PASSED",
+    tomorrow: "TOMORROW",
   },
   es: {
     appName: "Safe Sun",
@@ -328,6 +330,8 @@ export const dict = {
     hydration: "Hidratación",
     hydrationGoal: "Meta diaria de agua",
     glasses: "vasos",
+    passed: "PASÓ",
+    tomorrow: "MAÑANA",
   },
 } as const;
 
