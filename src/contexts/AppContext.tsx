@@ -348,8 +348,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const end = Date.now() + cap;
     setTimerEndsAt(end);
     localStorage.setItem(LS.timer, JSON.stringify(end));
+    // Ask the service worker to fire a background notification at the end,
+    // so it works even if the app is closed or in the background.
+    try {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.active?.postMessage({
+            type: "SCHEDULE_REAPPLY",
+            at: end,
+            title: t("appName"),
+            body: t("reapplyNow"),
+          });
+        }).catch(() => {});
+      }
+    } catch {}
   };
-  const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); timerCapMsRef.current = null; };
+  const resetTimer = () => {
+    setTimerEndsAt(null);
+    localStorage.removeItem(LS.timer);
+    timerCapMsRef.current = null;
+    try {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.active?.postMessage({ type: "CANCEL_REAPPLY" });
+        }).catch(() => {});
+      }
+    } catch {}
+  };
 
   // Smart timer: when UV changes, scale remaining time so the depletion rate
   // tracks current UV (higher UV → faster countdown).
