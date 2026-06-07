@@ -164,6 +164,8 @@ export const dict = {
     hydration: "Hydration",
     hydrationGoal: "Daily water goal",
     glasses: "glasses",
+    passed: "PASSED",
+    tomorrow: "TOMORROW",
   },
   es: {
     appName: "Safe Sun",
