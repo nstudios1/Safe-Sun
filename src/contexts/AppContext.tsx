@@ -391,6 +391,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const end = Date.now() + newRemaining;
     setTimerEndsAt(end);
     localStorage.setItem(LS.timer, JSON.stringify(end));
+    try {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.active?.postMessage({ type: "CANCEL_REAPPLY" });
+          reg.active?.postMessage({
+            type: "SCHEDULE_REAPPLY",
+            at: end,
+            title: t("appName"),
+            body: t("reapplyNow"),
+          });
+        }).catch(() => {});
+      }
+    } catch {}
   }, [weather?.uv, skinType]); // eslint-disable-line
 
   const value = useMemo<AppState>(() => ({
