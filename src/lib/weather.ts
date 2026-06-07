@@ -24,7 +24,6 @@ export interface WeatherData {
   sunrise: string;
   sunset: string;
   timezone: string;
-  utcOffsetSeconds: number;
 }
 
 export async function geocodeCity(query: string, lang: string = "en"): Promise<Geo[]> {
@@ -106,16 +105,7 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
   const isClear = code === 0 || cloud < 25;
   if (isClear) baseUV = Math.max(baseUV, currentClear, hourClear);
   // Safety margin: +1.5 to avoid under-protection (toggleable)
-  let safeUV = Math.max(0, baseUV + (safetyMargin ? 1.5 : 0));
-  // Past sunset / before sunrise in the location's local time → force UV 0
-  const sunsetIso: string = j.daily?.sunset?.[0] ?? "";
-  const sunriseIso: string = j.daily?.sunrise?.[0] ?? "";
-  if (sunsetIso && sunriseIso) {
-    const sunsetUTC = Date.parse(sunsetIso + "Z") - offsetSec * 1000;
-    const sunriseUTC = Date.parse(sunriseIso + "Z") - offsetSec * 1000;
-    const nowUTC = Date.now();
-    if (nowUTC >= sunsetUTC || nowUTC < sunriseUTC) safeUV = 0;
-  }
+  const safeUV = Math.max(0, baseUV + (safetyMargin ? 1.5 : 0));
 
   return {
     uv: Math.round(safeUV * 10) / 10,
@@ -136,7 +126,6 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
     sunrise: j.daily?.sunrise?.[0] ?? "",
     sunset: j.daily?.sunset?.[0] ?? "",
     timezone: j.timezone ?? "",
-    utcOffsetSeconds: offsetSec,
   };
 }
 

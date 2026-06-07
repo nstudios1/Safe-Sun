@@ -1,4 +1,4 @@
-const CACHE = 'safesun-v2';
+const CACHE = 'safesun-v1';
 const ASSETS = ['/', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -38,44 +38,4 @@ self.addEventListener('push', (e) => {
     requireInteraction: true,
     tag: 'safesun',
   }));
-});
-
-// Allow the page to schedule a background reapply notification. Uses
-// Notification Triggers (Chrome/Android) when available so the alert fires
-// even if the page is closed; otherwise falls back to a setTimeout while the
-// service worker is alive.
-self.addEventListener('message', (event) => {
-  const msg = event.data || {};
-  if (msg.type === 'SCHEDULE_REAPPLY' && typeof msg.at === 'number') {
-    const delay = Math.max(0, msg.at - Date.now());
-    const title = msg.title || 'Safe Sun';
-    const body = msg.body || 'Time to re-apply sunscreen!';
-    const opts = {
-      body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      vibrate: [500, 200, 500, 200, 500, 200, 800],
-      requireInteraction: true,
-      tag: 'safesun-reapply',
-      renotify: true,
-    };
-    try {
-      // Notification Triggers (origin-trial / Chromium). Fires even if closed.
-      if ('showTrigger' in Notification.prototype) {
-        // eslint-disable-next-line no-undef
-        opts.showTrigger = new TimestampTrigger(msg.at);
-        self.registration.showNotification(title, opts);
-        return;
-      }
-    } catch {}
-    // Fallback: schedule while SW is alive.
-    setTimeout(() => {
-      self.registration.showNotification(title, opts);
-    }, delay);
-  }
-  if (msg.type === 'CANCEL_REAPPLY') {
-    self.registration.getNotifications({ tag: 'safesun-reapply', includeTriggered: true }).then((list) => {
-      list.forEach((n) => n.close());
-    }).catch(() => {});
-  }
 });
