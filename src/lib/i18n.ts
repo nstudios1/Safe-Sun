@@ -330,6 +330,8 @@ export const dict = {
     hydration: "Hidratación",
     hydrationGoal: "Meta diaria de agua",
     glasses: "vasos",
+    passed: "PASÓ",
+    tomorrow: "MAÑANA",
   },
 } as const;
 
