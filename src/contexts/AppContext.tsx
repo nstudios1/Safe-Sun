@@ -391,6 +391,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";
     document.body.dataset.uv = bucket;
+    if (weather?.isNight) document.body.dataset.night = "true";
+    else delete document.body.dataset.night;
   }, [weather]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
