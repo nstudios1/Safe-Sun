@@ -32,7 +32,7 @@ export default function Home() {
               <span className="text-shadow truncate">{location?.name || "—"}</span>
               {weather?.isNight && (
                 <span className="ml-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest opacity-80">
-                  <Moon size={12} /> {t("night")}
+                  <Moon size={12} /> {t("nightTime")}
                 </span>
               )}
             </div>
