@@ -11,7 +11,7 @@ import { UVAlert } from "@/components/safesun/UVAlert";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { UserAvatar } from "@/components/safesun/UserAvatar";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
-import { MapPin, RefreshCw } from "lucide-react";
+import { MapPin, RefreshCw, Moon } from "lucide-react";
 
 export default function Home() {
   const { weather, location, useGPS, refresh, loading, t, profile, spf, dangerPulse } = useApp();
@@ -30,6 +30,11 @@ export default function Home() {
             <div className="flex items-center gap-1 text-base font-semibold">
               <MapPin size={14} className="opacity-80" />
               <span className="text-shadow truncate">{location?.name || "—"}</span>
+              {weather?.isNight && (
+                <span className="ml-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest opacity-80">
+                  <Moon size={12} /> {t("nightTime")}
+                </span>
+              )}
             </div>
           </div>
         </div>

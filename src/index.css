@@ -144,6 +144,29 @@
   --mesh-3: 320 85% 35%;
   animation: extreme-pulse 2.5s ease-in-out infinite;
 }
+
+/* Night mode — activates when it's nighttime in the selected city */
+body[data-night="true"] .mesh-bg {
+  background: hsl(230 50% 4%);
+  animation: none;
+}
+body[data-night="true"] .mesh-bg::before {
+  background: hsl(230 60% 12%);
+  opacity: 0.55;
+}
+body[data-night="true"] .mesh-bg::after {
+  background: hsl(250 55% 14%);
+  opacity: 0.5;
+}
+body[data-night="true"] .mesh-bg .blob {
+  background: hsl(220 50% 10%);
+  opacity: 0.45;
+}
+body[data-night="true"] {
+  --glass-bg: 230 30% 8% / 0.55;
+  --glass-bg-strong: 230 30% 10% / 0.7;
+  --glass-border: 230 40% 60% / 0.18;
+}
 @keyframes extreme-pulse {
   0%,100% { background: hsl(270 60% 8%); }
   50% { background: hsl(285 70% 14%); }
