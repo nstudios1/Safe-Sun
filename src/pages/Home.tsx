@@ -5,6 +5,7 @@ import { WeatherCard } from "@/components/safesun/WeatherCard";
 import { ProtectionPlan } from "@/components/safesun/ProtectionPlan";
 import { SunscreenTimer } from "@/components/safesun/SunscreenTimer";
 import { VitaminDRing } from "@/components/safesun/VitaminDRing";
+import { HydrationCard } from "@/components/safesun/HydrationCard";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
 import { UVAlert } from "@/components/safesun/UVAlert";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
@@ -16,14 +17,6 @@ export default function Home() {
   const { weather, location, useGPS, refresh, loading, t, profile, spf, dangerPulse } = useApp();
   useEffect(() => { if (!location) useGPS(); }, []); // eslint-disable-line
   const noProtection = !spf || spf <= 0;
-
-  const waterText = (() => {
-    if (!weather) return null;
-    const uv = weather.uv;
-    if (uv <= 2) return t("waterReminderLow");
-    if (uv <= 7) return t("waterReminderMid");
-    return t("waterReminderHigh");
-  })();
 
   return (
     <div className="px-4 pt-6 pb-32 max-w-xl mx-auto">
@@ -72,11 +65,7 @@ export default function Home() {
           <WeatherCard />
           <ProtectionPlan />
           <SunscreenTimer />
-          {waterText && (
-            <div className="text-center text-xs font-medium tracking-wide opacity-90 py-1" style={{ textShadow: "0 1px 8px hsl(0 0% 0% / 0.4)" }}>
-              {waterText}
-            </div>
-          )}
+          <HydrationCard />
           <VitaminDRing />
           <HourlyStrip />
           <Disclaimer />
