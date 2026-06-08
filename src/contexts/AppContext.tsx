@@ -216,6 +216,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const w = await fetchWeather(location.lat, location.lon, safetyMargin);
       setWeather(w);
+      // Night at the target city: stop any active burn countdown.
+      if (w.isNight && timerEndsAt) {
+        setTimerEndsAt(null);
+        try { localStorage.removeItem(LS.timer); } catch {}
+        timerCapMsRef.current = null;
+      }
       if (alertsEnabled && w.uv >= 8 && Date.now() - lastAlertedRef.current > 60 * 60 * 1000) {
         lastAlertedRef.current = Date.now();
         toast.warning(t("highUVAlert"), { description: t("highUVMsg") });
@@ -228,7 +234,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [location, alertsEnabled, safetyMargin, t]);
+  }, [location, alertsEnabled, safetyMargin, t, timerEndsAt]);
 
   useEffect(() => { refresh(); }, [location?.lat, location?.lon, safetyMargin]); // eslint-disable-line
 
