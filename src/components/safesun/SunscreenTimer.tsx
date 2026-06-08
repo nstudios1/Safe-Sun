@@ -10,9 +10,10 @@ function fmt(ms: number) {
 }
 
 export function SunscreenTimer() {
-  const { t, timerEndsAt, timerRemaining, startTimer, resetTimer } = useApp();
+  const { t, timerEndsAt, timerRemaining, startTimer, resetTimer, weather } = useApp();
   const total = 2 * 60 * 60 * 1000;
   const pct = timerEndsAt ? 1 - timerRemaining / total : 0;
+  const night = !!weather?.isNight;
 
   return (
     <div className="glass p-5 animate-fade-up">
@@ -23,7 +24,12 @@ export function SunscreenTimer() {
       <div className="relative h-2 rounded-full bg-white/10 overflow-hidden mb-4">
         <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[hsl(28_100%_60%)] to-[hsl(0_85%_55%)]" style={{ width: `${pct * 100}%` }} />
       </div>
-      {timerEndsAt ? (
+      {night ? (
+        <div className="text-center py-3">
+          <div className="text-xs uppercase tracking-widest opacity-80">{t("nightTimeLabel")}</div>
+          <div className="text-2xl font-bold tabular-nums mt-1 text-shadow-lg">{t("nightTime")}</div>
+        </div>
+      ) : timerEndsAt ? (
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs opacity-80">{t("timerActive")}</div>
