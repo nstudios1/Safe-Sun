@@ -1,6 +1,7 @@
 import { Sun, Sunrise, Sunset } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
+import { localIsoToUTCms } from "@/lib/weather";
 
 function fmtCountdown(ms: number): string {
   if (ms <= 0) return "—";
@@ -14,9 +15,14 @@ function fmtCountdown(ms: number): string {
 
 function fmtTime(iso: string): string {
   if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  } catch { return "—"; }
+  // Keep wall-clock as the location reports it (open-meteo returns local time).
+  const m = iso.match(/T(\d{2}):(\d{2})/);
+  if (!m) return iso;
+  const h = +m[1];
+  const mi = m[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${mi} ${ampm}`;
 }
 
 export function GoldenHour() {
@@ -28,12 +34,13 @@ export function GoldenHour() {
   }, []);
   if (!weather?.sunset) return null;
 
-  const sunsetMs = new Date(weather.sunset).getTime();
-  const sunriseMs = weather.sunrise ? new Date(weather.sunrise).getTime() : 0;
+  const sunsetMs = localIsoToUTCms(weather.sunset, weather.utcOffsetSec);
+  const sunriseMs = weather.sunrise ? localIsoToUTCms(weather.sunrise, weather.utcOffsetSec) : 0;
   const goldenStart = sunsetMs - 60 * 60 * 1000;
   const inGolden = now >= goldenStart && now < sunsetMs;
   const toGolden = goldenStart - now;
   const toSunset = sunsetMs - now;
+  const passed = now >= sunsetMs;
 
   return (
     <div className="glass p-5 animate-fade-up">
@@ -49,13 +56,15 @@ export function GoldenHour() {
         <div className="rounded-2xl bg-gradient-to-br from-[hsl(45_100%_55%/0.25)] to-[hsl(28_100%_55%/0.25)] border border-white/15 p-3">
           <div className="text-[10px] uppercase tracking-widest opacity-90">{t("goldenHour")}</div>
           <div className="text-lg font-bold mt-1 text-shadow-lg">
-            {inGolden ? t("nowText") : `${t("inText")} ${fmtCountdown(toGolden)}`}
+            {passed ? "PASSED" : inGolden ? t("nowText") : `${t("inText")} ${fmtCountdown(toGolden)}`}
           </div>
         </div>
         <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
           <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest opacity-80"><Sunset size={12} />{t("sunset")}</div>
           <div className="text-lg font-bold mt-1">{fmtTime(weather.sunset)}</div>
-          {toSunset > 0 && <div className="text-[10px] opacity-70 mt-0.5">{t("inText")} {fmtCountdown(toSunset)}</div>}
+          {toSunset > 0
+            ? <div className="text-[10px] opacity-70 mt-0.5">{t("inText")} {fmtCountdown(toSunset)}</div>
+            : <div className="text-[10px] opacity-70 mt-0.5">PASSED</div>}
         </div>
       </div>
     </div>
