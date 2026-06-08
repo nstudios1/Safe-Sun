@@ -308,6 +308,12 @@ export const dict = {
     resetConfirmDesc: "Esto borrará todos tus datos guardados, incluyendo tipo de piel, SPF y ubicaciones. Esta acción no se puede deshacer.",
     cancel: "Cancelar",
     confirmReset: "Restablecer",
+    nightTime: "NOCHE",
+    nightTimeLabel: "El sol se ha puesto",
+    hydration: "Hidratación",
+    glasses: "vasos",
+    addGlass: "Añadir un vaso",
+    removeGlass: "Quitar un vaso",
   },
 } as const;
 
