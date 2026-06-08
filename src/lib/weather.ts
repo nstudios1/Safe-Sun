@@ -24,6 +24,8 @@ export interface WeatherData {
   sunrise: string;
   sunset: string;
   timezone: string;
+  utcOffsetSec: number;
+  isNight: boolean;
 }
 
 export async function geocodeCity(query: string, lang: string = "en"): Promise<Geo[]> {
@@ -107,8 +109,18 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
   // Safety margin: +1.5 to avoid under-protection (toggleable)
   const safeUV = Math.max(0, baseUV + (safetyMargin ? 1.5 : 0));
 
+  // Determine night for the LOCATION by parsing sunrise/sunset (which API
+  // returns in the location's local time, no timezone suffix) as UTC ms.
+  const sunriseIso: string = j.daily?.sunrise?.[0] ?? "";
+  const sunsetIso: string = j.daily?.sunset?.[0] ?? "";
+  const sunriseUTC = sunriseIso ? localIsoToUTCms(sunriseIso, offsetSec) : 0;
+  const sunsetUTC = sunsetIso ? localIsoToUTCms(sunsetIso, offsetSec) : 0;
+  const nowMs = Date.now();
+  const isNight = sunsetUTC > 0 && (nowMs >= sunsetUTC || (sunriseUTC > 0 && nowMs < sunriseUTC));
+  const finalUV = isNight ? 0 : Math.round(safeUV * 10) / 10;
+
   return {
-    uv: Math.round(safeUV * 10) / 10,
+    uv: finalUV,
     uvRaw: currentRaw,
     uvClearSky: Math.max(currentClear, j.daily?.uv_index_clear_sky_max?.[0] ?? 0),
     uvMax: Math.max(j.daily?.uv_index_max?.[0] ?? 0, j.daily?.uv_index_clear_sky_max?.[0] ?? 0),
@@ -126,7 +138,23 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
     sunrise: j.daily?.sunrise?.[0] ?? "",
     sunset: j.daily?.sunset?.[0] ?? "",
     timezone: j.timezone ?? "",
+    utcOffsetSec: offsetSec,
+    isNight,
   };
+}
+
+// Open-Meteo returns local times like "2024-06-08T19:23" with NO timezone
+// suffix. Convert that local clock time at the given utc offset into real UTC ms.
+export function localIsoToUTCms(iso: string, offsetSec: number): number {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!m) return new Date(iso).getTime();
+  const [, y, mo, d, h, mi] = m;
+  return Date.UTC(+y, +mo - 1, +d, +h, +mi) - offsetSec * 1000;
+}
+
+// Current Date object representing wall-clock time at the given utc offset.
+export function locationNow(offsetSec: number): Date {
+  return new Date(Date.now() + offsetSec * 1000);
 }
 
 export function weatherLabel(code: number): string {
