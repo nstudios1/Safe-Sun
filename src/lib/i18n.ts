@@ -151,6 +151,12 @@ export const dict = {
     resetConfirmDesc: "This will erase all your saved data including skin type, SPF and locations. This action cannot be undone.",
     cancel: "Cancel",
     confirmReset: "Reset",
+    nightTime: "NIGHT TIME",
+    nightTimeLabel: "Sun has set",
+    hydration: "Hydration",
+    glasses: "glasses",
+    addGlass: "Add a glass",
+    removeGlass: "Remove a glass",
   },
   es: {
     appName: "Safe Sun",
