@@ -1,8 +1,18 @@
+// ============= Full file contents =============
+
 export interface Geo {
   name: string;
   country?: string;
   lat: number;
   lon: number;
+}
+
+export interface DailyForecast {
+  date: string;
+  uvMax: number;
+  tempMax: number;
+  tempMin: number;
+  code: number;
 }
 
 export interface WeatherData {
@@ -19,6 +29,7 @@ export interface WeatherData {
   cloudCover: number;
   weatherCode: number;
   hourly: { time: string; uv: number; temp: number; humidity: number; windGust: number; precipProb: number }[];
+  daily: DailyForecast[];
   peakUV: number;
   peakTime: string;
   sunrise: string;
@@ -26,6 +37,29 @@ export interface WeatherData {
   timezone: string;
   utcOffsetSec: number;
   isNight: boolean;
+}
+
+// ---- Offline cache (last successful fetch) ----
+const CACHE_KEY = "ss_weather_cache_v1";
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6h
+
+interface CachedWeather { key: string; ts: number; data: WeatherData; }
+
+export function cacheWeather(key: string, data: WeatherData) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ key, ts: Date.now(), data } as CachedWeather));
+  } catch {}
+}
+
+export function loadCachedWeather(key: string): WeatherData | null {
+  try {
+    const v = localStorage.getItem(CACHE_KEY);
+    if (!v) return null;
+    const c = JSON.parse(v) as CachedWeather;
+    if (c.key !== key) return null;
+    if (Date.now() - c.ts > CACHE_TTL) return null;
+    return c.data;
+  } catch { return null; }
 }
 
 export async function geocodeCity(query: string, lang: string = "en"): Promise<Geo[]> {
@@ -54,7 +88,7 @@ export async function reverseGeocode(lat: number, lon: number, lang = "en"): Pro
 }
 
 export async function fetchWeather(lat: number, lon: number, safetyMargin: boolean = true): Promise<WeatherData> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability&daily=uv_index_max,uv_index_clear_sky_max,sunrise,sunset&timezone=auto&forecast_days=1`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability&daily=uv_index_max,uv_index_clear_sky_max,sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=7`;
   const r = await fetch(url);
   const j = await r.json();
 
@@ -96,6 +130,20 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
     }
   }
 
+  // 7-day forecast (same +1.5 safety margin as the live reading)
+  const dailyUvMax: number[] = j.daily?.uv_index_max || [];
+  const dailyUvClearMax: number[] = j.daily?.uv_index_clear_sky_max || [];
+  const dailyTempMax: number[] = j.daily?.temperature_2m_max || [];
+  const dailyTempMin: number[] = j.daily?.temperature_2m_min || [];
+  const dailyCodes: number[] = j.daily?.weather_code || [];
+  const daily: DailyForecast[] = (j.daily?.time || []).map((d: string, i: number) => ({
+    date: d,
+    uvMax: Math.round(Math.max(dailyUvMax[i] ?? 0, dailyUvClearMax[i] ?? 0) + (safetyMargin ? 1.5 : 0) * 10) / 10,
+    tempMax: dailyTempMax[i] ?? 0,
+    tempMin: dailyTempMin[i] ?? 0,
+    code: dailyCodes[i] ?? 0,
+  }));
+
   const code: number = j.current?.weather_code ?? 0;
   const cloud: number = j.current?.cloud_cover ?? 0;
   const currentRaw = j.current?.uv_index ?? 0;
@@ -133,6 +181,7 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
     cloudCover: cloud,
     weatherCode: code,
     hourly,
+    daily,
     peakUV,
     peakTime,
     sunrise: j.daily?.sunrise?.[0] ?? "",

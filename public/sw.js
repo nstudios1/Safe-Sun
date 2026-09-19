@@ -1,4 +1,4 @@
-const CACHE = 'safesun-v1';
+const CACHE = 'safesun-v2';
 const ASSETS = ['/', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -13,7 +13,32 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(req).catch(() => caches.match('/')));
     return;
   }
-  e.respondWith(caches.match(req).then((r) => r || fetch(req)));
+  // Same-origin assets: cache-first with background refresh → full offline support.
+  if (new URL(req.url).origin === self.location.origin) {
+    e.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      const cached = await cache.match(req);
+      const network = fetch(req).then((res) => {
+        if (res && res.ok) cache.put(req, res.clone());
+        return res;
+      }).catch(() => cached);
+      return cached || network;
+    })());
+    return;
+  }
+  // Cross-origin (weather API): network-first, fall back to cache offline.
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    try {
+      const res = await fetch(req);
+      if (res && res.ok) cache.put(req, res.clone());
+      return res;
+    } catch {
+      const cached = await cache.match(req);
+      if (cached) return cached;
+      throw new Error('offline');
+    }
+  })());
 });
 
 // Bring the app to the foreground when the user taps a notification.
