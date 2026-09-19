@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { dict, type DictKey, type Lang } from "@/lib/i18n";
-import { fetchWeather, reverseGeocode, type Geo, type WeatherData } from "@/lib/weather";
+import { fetchWeather, reverseGeocode, cacheWeather, loadCachedWeather, type Geo, type WeatherData } from "@/lib/weather";
+import { bumpStreak, incrementTimersStarted } from "@/lib/progress";
 import { uvBucket, minutesToBurn } from "@/lib/uv";
 import { toast } from "sonner";
 
@@ -72,6 +73,7 @@ interface AppState {
   useGPS: () => Promise<void>;
   weather: WeatherData | null;
   loading: boolean;
+  isOffline: boolean;
   refresh: () => Promise<void>;
 
   saved: Geo[];
@@ -133,6 +135,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [location, setLocationState] = useState<Geo | null>(() => load(LS.loc, null));
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   const [saved, setSaved] = useState<Geo[]>(() => load(LS.saved, []));
   const [skinType, setSkinTypeState] = useState<number>(() => {
     const p = load<Profile | null>(LS.profile, null);
@@ -154,6 +157,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const lastTickRef = useRef<number | null>(null);
   const lastAlertedRef = useRef<number>(0);
   const timerCapMsRef = useRef<number | null>(null);
+  const offlineToastRef = useRef<number>(0);
+  const halfwayRemindedRef = useRef(false);
+  const soonRemindedRef = useRef(false);
 
   const t = useCallback((k: DictKey) => dict[lang][k] ?? dict.en[k], [lang]);
 
