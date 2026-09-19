@@ -293,6 +293,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       }
       lastTickRef.current = now;
+      // Mid-timer reapply reminders: halfway point + 15 min before the end.
+      const cap = timerCapMsRef.current;
+      if (cap && r > 0) {
+        if (!halfwayRemindedRef.current && r <= cap / 2) {
+          halfwayRemindedRef.current = true;
+          toast(t("reapplyHalfwayTitle"), { description: t("reapplyHalfwayDesc") });
+          fireNotification(t("reapplyHalfwayTitle"), t("reapplyHalfwayDesc"));
+        }
+        if (!soonRemindedRef.current && r <= 15 * 60 * 1000) {
+          soonRemindedRef.current = true;
+          toast.warning(t("reapplySoonTitle"), { description: t("reapplySoonDesc") });
+          fireNotification(t("reapplySoonTitle"), t("reapplySoonDesc"));
+          vibrate([200, 100, 200]);
+        }
+      }
       if (r === 0) {
         toast.success(t("reapplyNow"));
         fireNotification(t("appName"), t("reapplyNow"));
@@ -364,6 +379,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
     vibrate(60);
+    incrementTimersStarted();
+    halfwayRemindedRef.current = false;
+    soonRemindedRef.current = false;
     const TWO_H = 2 * 60 * 60 * 1000;
     let cap = TWO_H;
     if (weather) {
