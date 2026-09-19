@@ -393,7 +393,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimerEndsAt(end);
     localStorage.setItem(LS.timer, JSON.stringify(end));
   };
-  const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); timerCapMsRef.current = null; };
+  const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); timerCapMsRef.current = null; halfwayRemindedRef.current = false; soonRemindedRef.current = false; };
+
+  // Daily streak: count each day the app is opened with a profile.
+  useEffect(() => { if (profile) bumpStreak(); }, [profile]);
 
   // Smart timer: when UV changes, scale remaining time so the depletion rate
   // tracks current UV (higher UV → faster countdown).
@@ -415,7 +418,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AppState>(() => ({
     lang, setLang, t,
     profile, saveProfile, resetProfile,
-    location, setLocation, useGPS, weather, loading, refresh,
+    location, setLocation, useGPS, weather, loading, isOffline, refresh,
     saved, toggleSave, isSaved,
     skinType, setSkinType,
     alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh,
@@ -424,7 +427,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     timerEndsAt, startTimer, resetTimer, timerRemaining,
     vitDMinutes,
     dangerPulse, triggerDangerPulse,
-  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, timerEndsAt, timerRemaining, refresh, vitDMinutes, dangerPulse]);
+  }), [lang, t, profile, location, weather, loading, isOffline, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, timerEndsAt, timerRemaining, refresh, vitDMinutes, dangerPulse]);
 
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";
