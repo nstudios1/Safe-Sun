@@ -219,8 +219,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (!location) return;
     setLoading(true);
+    const locKey = `${location.lat.toFixed(4)},${location.lon.toFixed(4)}`;
     try {
       const w = await fetchWeather(location.lat, location.lon, safetyMargin);
+      setIsOffline(false);
+      cacheWeather(locKey, w); // save for offline use
       setWeather(w);
       // Night at the target city: stop any active burn countdown.
       if (w.isNight && timerEndsAt) {
@@ -236,7 +239,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         vibrate([400, 200, 400, 200, 800]);
       }
     } catch (e) {
-      toast.error("Weather error");
+      // No internet: fall back to the last successfully saved data.
+      const cached = loadCachedWeather(locKey);
+      if (cached) {
+        setWeather(cached);
+        setIsOffline(true);
+        if (Date.now() - offlineToastRef.current > 30 * 60 * 1000) {
+          offlineToastRef.current = Date.now();
+          toast.info(t("offlineBadge"));
+        }
+      } else {
+        toast.error("Weather error");
+      }
     } finally {
       setLoading(false);
     }
