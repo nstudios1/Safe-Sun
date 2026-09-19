@@ -7,6 +7,7 @@ import { SunscreenTimer } from "@/components/safesun/SunscreenTimer";
 import { VitaminDRing } from "@/components/safesun/VitaminDRing";
 import { HydrationCard } from "@/components/safesun/HydrationCard";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
+import { WeeklyForecast } from "@/components/safesun/WeeklyForecast";
 import { UVAlert } from "@/components/safesun/UVAlert";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { UserAvatar } from "@/components/safesun/UserAvatar";
@@ -14,7 +15,7 @@ import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
 import { MapPin, RefreshCw, Moon } from "lucide-react";
 
 export default function Home() {
-  const { weather, location, useGPS, refresh, loading, t, profile, spf, dangerPulse } = useApp();
+  const { weather, location, useGPS, refresh, loading, t, profile, spf, dangerPulse, isOffline } = useApp();
   useEffect(() => { if (!location) useGPS(); }, []); // eslint-disable-line
   const noProtection = !spf || spf <= 0;
 
@@ -38,9 +39,16 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <button onClick={refresh} className="glass p-3 hover:bg-white/20 transition" aria-label="refresh">
-          <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-        </button>
+        <div className="flex items-center gap-2">
+          {isOffline && (
+            <span className="glass px-2.5 py-1.5 text-[9px] uppercase tracking-widest opacity-90 whitespace-nowrap">
+              {t("offlineBadge")}
+            </span>
+          )}
+          <button onClick={refresh} className="glass p-3 hover:bg-white/20 transition" aria-label="refresh">
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          </button>
+        </div>
       </header>
 
       {weather ? (
@@ -73,6 +81,7 @@ export default function Home() {
           <HydrationCard />
           <VitaminDRing />
           <HourlyStrip />
+          <WeeklyForecast />
           <Disclaimer />
         </div>
       ) : (
