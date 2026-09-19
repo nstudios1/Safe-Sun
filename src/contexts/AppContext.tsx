@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { dict, type DictKey, type Lang } from "@/lib/i18n";
-import { fetchWeather, reverseGeocode, type Geo, type WeatherData } from "@/lib/weather";
+import { fetchWeather, reverseGeocode, cacheWeather, loadCachedWeather, type Geo, type WeatherData } from "@/lib/weather";
+import { bumpStreak, incrementTimersStarted } from "@/lib/progress";
 import { uvBucket, minutesToBurn } from "@/lib/uv";
 import { toast } from "sonner";
 
@@ -72,6 +73,7 @@ interface AppState {
   useGPS: () => Promise<void>;
   weather: WeatherData | null;
   loading: boolean;
+  isOffline: boolean;
   refresh: () => Promise<void>;
 
   saved: Geo[];
@@ -133,6 +135,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [location, setLocationState] = useState<Geo | null>(() => load(LS.loc, null));
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   const [saved, setSaved] = useState<Geo[]>(() => load(LS.saved, []));
   const [skinType, setSkinTypeState] = useState<number>(() => {
     const p = load<Profile | null>(LS.profile, null);
@@ -154,6 +157,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const lastTickRef = useRef<number | null>(null);
   const lastAlertedRef = useRef<number>(0);
   const timerCapMsRef = useRef<number | null>(null);
+  const offlineToastRef = useRef<number>(0);
+  const halfwayRemindedRef = useRef(false);
+  const soonRemindedRef = useRef(false);
 
   const t = useCallback((k: DictKey) => dict[lang][k] ?? dict.en[k], [lang]);
 
@@ -213,8 +219,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (!location) return;
     setLoading(true);
+    const locKey = `${location.lat.toFixed(4)},${location.lon.toFixed(4)}`;
     try {
       const w = await fetchWeather(location.lat, location.lon, safetyMargin);
+      setIsOffline(false);
+      cacheWeather(locKey, w); // save for offline use
       setWeather(w);
       // Night at the target city: stop any active burn countdown.
       if (w.isNight && timerEndsAt) {
@@ -230,7 +239,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         vibrate([400, 200, 400, 200, 800]);
       }
     } catch (e) {
-      toast.error("Weather error");
+      // No internet: fall back to the last successfully saved data.
+      const cached = loadCachedWeather(locKey);
+      if (cached) {
+        setWeather(cached);
+        setIsOffline(true);
+        if (Date.now() - offlineToastRef.current > 30 * 60 * 1000) {
+          offlineToastRef.current = Date.now();
+          toast.info(t("offlineBadge"));
+        }
+      } else {
+        toast.error("Weather error");
+      }
     } finally {
       setLoading(false);
     }
@@ -273,6 +293,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       }
       lastTickRef.current = now;
+      // Mid-timer reapply reminders: halfway point + 15 min before the end.
+      const cap = timerCapMsRef.current;
+      if (cap && r > 0) {
+        if (!halfwayRemindedRef.current && r <= cap / 2) {
+          halfwayRemindedRef.current = true;
+          toast(t("reapplyHalfwayTitle"), { description: t("reapplyHalfwayDesc") });
+          fireNotification(t("reapplyHalfwayTitle"), t("reapplyHalfwayDesc"));
+        }
+        if (!soonRemindedRef.current && r <= 15 * 60 * 1000) {
+          soonRemindedRef.current = true;
+          toast.warning(t("reapplySoonTitle"), { description: t("reapplySoonDesc") });
+          fireNotification(t("reapplySoonTitle"), t("reapplySoonDesc"));
+          vibrate([200, 100, 200]);
+        }
+      }
       if (r === 0) {
         toast.success(t("reapplyNow"));
         fireNotification(t("appName"), t("reapplyNow"));
@@ -344,6 +379,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
     vibrate(60);
+    incrementTimersStarted();
+    halfwayRemindedRef.current = false;
+    soonRemindedRef.current = false;
     const TWO_H = 2 * 60 * 60 * 1000;
     let cap = TWO_H;
     if (weather) {
@@ -355,7 +393,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimerEndsAt(end);
     localStorage.setItem(LS.timer, JSON.stringify(end));
   };
-  const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); timerCapMsRef.current = null; };
+  const resetTimer = () => { setTimerEndsAt(null); localStorage.removeItem(LS.timer); timerCapMsRef.current = null; halfwayRemindedRef.current = false; soonRemindedRef.current = false; };
+
+  // Daily streak: count each day the app is opened with a profile.
+  useEffect(() => { if (profile) bumpStreak(); }, [profile]);
 
   // Smart timer: when UV changes, scale remaining time so the depletion rate
   // tracks current UV (higher UV → faster countdown).
@@ -377,7 +418,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AppState>(() => ({
     lang, setLang, t,
     profile, saveProfile, resetProfile,
-    location, setLocation, useGPS, weather, loading, refresh,
+    location, setLocation, useGPS, weather, loading, isOffline, refresh,
     saved, toggleSave, isSaved,
     skinType, setSkinType,
     alertsEnabled, setAlertsEnabled, autoRefresh, setAutoRefresh,
@@ -386,7 +427,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     timerEndsAt, startTimer, resetTimer, timerRemaining,
     vitDMinutes,
     dangerPulse, triggerDangerPulse,
-  }), [lang, t, profile, location, weather, loading, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, timerEndsAt, timerRemaining, refresh, vitDMinutes, dangerPulse]);
+  }), [lang, t, profile, location, weather, loading, isOffline, saved, skinType, alertsEnabled, autoRefresh, safetyMargin, spf, beachMode, timerEndsAt, timerRemaining, refresh, vitDMinutes, dangerPulse]);
 
   useEffect(() => {
     const bucket = weather ? uvBucket(weather.uv) : "low";

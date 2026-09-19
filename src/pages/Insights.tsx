@@ -2,6 +2,7 @@ import { useApp } from "@/contexts/AppContext";
 import { HourlyStrip } from "@/components/safesun/HourlyStrip";
 import { minutesToBurn, uvColor } from "@/lib/uv";
 import { GoldenHour } from "@/components/safesun/GoldenHour";
+import { Achievements } from "@/components/safesun/Achievements";
 import { Droplets, Wind, CloudRain } from "lucide-react";
 
 export default function Insights() {
@@ -30,6 +31,7 @@ export default function Insights() {
           </div>
           <GoldenHour />
           <HourlyStrip />
+          <Achievements />
           <div className="glass p-5 animate-fade-up">
             <h3 className="text-sm uppercase tracking-widest opacity-80 mb-3">{t("nextHoursDetail")}</h3>
             <div className="space-y-2">
