@@ -107,7 +107,7 @@ interface AppState {
   triggerDangerPulse: () => void;
 }
 
-export const Ctx = createContext<AppState | null>(null);
+export const Ctx: React.Context<AppState | null> = ((globalThis as any).__ssAppCtx ??= createContext<AppState | null>(null));
 
 const LS = {
   profile: "ss_profile",
