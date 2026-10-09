@@ -4,6 +4,7 @@ import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/safesun/Disclaimer";
 import { UserAvatar } from "@/components/safesun/UserAvatar";
+import { SunscreenStash, NotificationsCard } from "@/components/safesun/SunscreenStash";
 import { SafetyMarginToggle } from "@/components/safesun/SafetyMarginToggle";
 import {
   AlertDialog,
@@ -100,6 +101,8 @@ export default function SettingsPage() {
         </button>
       </Section>
 
+      <SunscreenStash />
+
       <Section icon={<Snowflake size={16} />} title={t("beachMode")}>
         <p className="text-xs opacity-80 mb-3">{t("beachHelp")}</p>
         <Toggle label={t("beachMode")} on={beachMode} onChange={setBeachMode} />
@@ -124,6 +127,8 @@ export default function SettingsPage() {
         <Toggle label={t("enableAlerts")} on={alertsEnabled} onChange={setAlertsEnabled} />
         <Toggle label={t("autoRefresh")} on={autoRefresh} onChange={setAutoRefresh} />
       </Section>
+
+      <NotificationsCard />
 
       <button onClick={install} disabled={installed} className="w-full glass-strong py-4 font-bold flex items-center justify-center gap-2 hover:bg-white/25 transition disabled:opacity-60 animate-fade-up">
         <Download size={18} />{installed ? t("installed") : t("install")}
