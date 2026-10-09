@@ -107,7 +107,7 @@ interface AppState {
   triggerDangerPulse: () => void;
 }
 
-export const Ctx = createContext<AppState | null>(null);
+export const Ctx: React.Context<AppState | null> = ((globalThis as any).__ssAppCtx ??= createContext<AppState | null>(null));
 
 const LS = {
   profile: "ss_profile",
@@ -231,7 +231,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         try { localStorage.removeItem(LS.timer); } catch {}
         timerCapMsRef.current = null;
       }
-      if (alertsEnabled && w.uv >= 8 && Date.now() - lastAlertedRef.current > 60 * 60 * 1000) {
+      if (alertsEnabled && w.uv >= 6 && Date.now() - lastAlertedRef.current > 60 * 60 * 1000) {
         lastAlertedRef.current = Date.now();
         toast.warning(t("highUVAlert"), { description: t("highUVMsg") });
         fireNotification(t("highUVAlert"), t("highUVMsg"));
