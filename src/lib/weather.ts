@@ -28,7 +28,7 @@ export interface WeatherData {
   precipProb: number;
   cloudCover: number;
   weatherCode: number;
-  hourly: { time: string; uv: number; temp: number; humidity: number; windGust: number; precipProb: number }[];
+  hourly: { time: string; uv: number; temp: number; humidity: number; windGust: number; precipProb: number; code?: number; isDay?: boolean }[];
   daily: DailyForecast[];
   peakUV: number;
   peakTime: string;
@@ -88,7 +88,7 @@ export async function reverseGeocode(lat: number, lon: number, lang = "en"): Pro
 }
 
 export async function fetchWeather(lat: number, lon: number, safetyMargin: boolean = true): Promise<WeatherData> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability&daily=uv_index_max,uv_index_clear_sky_max,sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=7`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,weather_code,cloud_cover,uv_index,uv_index_clear_sky&hourly=uv_index,uv_index_clear_sky,temperature_2m,relative_humidity_2m,wind_gusts_10m,precipitation_probability,weather_code,is_day&daily=uv_index_max,uv_index_clear_sky_max,sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=7`;
   const r = await fetch(url);
   const j = await r.json();
 
@@ -117,6 +117,8 @@ export async function fetchWeather(lat: number, lon: number, safetyMargin: boole
       humidity: hums[i] ?? 0,
       windGust: gusts[i] ?? 0,
       precipProb: precs[i] ?? 0,
+      code: j.hourly?.weather_code?.[i],
+      isDay: j.hourly?.is_day?.[i] === undefined ? undefined : j.hourly.is_day[i] === 1,
     });
   }
 
@@ -214,4 +216,19 @@ export function weatherLabel(code: number): string {
   if (code <= 77) return "Snow";
   if (code <= 82) return "Showers";
   return "Storm";
+}
+
+// WMO conditions, shared across live, hourly and daily forecasts.
+export function weatherEmoji(code?: number, isDay = true): string {
+  if (code === undefined) return "🌡️";
+  if (code === 0) return isDay ? "☀️" : "🌙";
+  if (code <= 2) return isDay ? "🌤️" : "☁️";
+  if (code === 3) return "☁️";
+  if (code <= 48) return "🌫️";
+  if (code <= 57) return "🌦️";
+  if (code <= 67) return "🌧️";
+  if (code <= 77) return "🌨️";
+  if (code <= 82) return "🌧️";
+  if (code <= 86) return "🌨️";
+  return "⛈️";
 }

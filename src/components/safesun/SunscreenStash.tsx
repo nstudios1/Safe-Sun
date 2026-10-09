@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, Package, Plus, Trash2, Check } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface Item { id: string; name: string; spf: number; filter: "mineral" | "chemical"; opened: string; pao: number; expiry: string; }
 const KEY = "ss_stash";
@@ -55,7 +56,7 @@ export function NotificationsCard() {
 }
 
 export function SunscreenStash() {
-  const { lang, setSpf } = useApp();
+  const { lang, spf, setSpf } = useApp();
   const s = L[lang];
   const [items, setItems] = useState<Item[]>(() => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; } });
   const [active, setActive] = useState<string | null>(() => localStorage.getItem(ACTIVE));
@@ -72,6 +73,13 @@ export function SunscreenStash() {
     setOpen(false);
   };
   const activate = (it: Item) => {
+    if (active === it.id && spf === it.spf) {
+      setActive(null);
+      localStorage.removeItem(ACTIVE);
+      setSpf(0);
+      toast.success(lang === "es" ? "Protector desactivado · PROTECCIÓN: NINGUNA" : "Sunscreen stopped · PROTECTION: NONE");
+      return;
+    }
     setActive(it.id); localStorage.setItem(ACTIVE, it.id);
     setSpf(it.spf); toast.success(s.activated, { description: `${it.name} · SPF ${it.spf}` });
   };
@@ -111,7 +119,7 @@ export function SunscreenStash() {
       {items.length === 0 && !open && <p className="text-sm opacity-70">{s.empty}</p>}
       <div className="space-y-2">
         {items.map((it) => {
-          const st = status(it); const d = useDate(it); const isActive = active === it.id;
+          const st = status(it); const d = useDate(it); const isActive = active === it.id && spf === it.spf;
           return (
             <div key={it.id} className={`rounded-2xl p-3 border ${isActive ? "bg-white/20 border-white/50" : "bg-white/5 border-white/15"}`}>
               <div className="flex items-start justify-between gap-2">
@@ -122,7 +130,7 @@ export function SunscreenStash() {
                 <span className={`shrink-0 text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full border ${badge[st]}`}>{s[st]}</span>
               </div>
               <div className="flex gap-2 mt-2">
-                <button onClick={() => activate(it)} disabled={isActive} className="flex-1 glass py-2 text-xs font-semibold hover:bg-white/15 disabled:opacity-90">{isActive ? `✓ ${s.inUse}` : s.use}</button>
+                <Button type="button" variant="ghost" onClick={() => activate(it)} aria-pressed={isActive} className="flex-1 glass min-h-11 text-xs font-semibold">{isActive ? (lang === "es" ? "Dejar de usar" : "Stop using") : s.use}</Button>
                 <button onClick={() => remove(it.id)} aria-label="delete" className="glass px-3 py-2 hover:bg-white/15"><Trash2 size={14} /></button>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { CloudRain, Droplets, Wind } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
-import { weatherLabel } from "@/lib/weather";
+import { weatherLabel, weatherEmoji } from "@/lib/weather";
 
 export function WeatherCard() {
   const { weather, t, location } = useApp();
@@ -14,7 +14,7 @@ export function WeatherCard() {
         <div>
           <div className="text-xs uppercase tracking-widest opacity-80">{t("weather")}</div>
           <div className="text-lg font-semibold mt-1">{location?.name}{location?.country ? `, ${location.country}` : ""}</div>
-          <div className="text-sm opacity-80">{weatherLabel(weather.weatherCode)}</div>
+          <div className="text-sm opacity-80"><span aria-hidden="true">{weatherEmoji(weather.weatherCode, !weather.isNight)}</span> {weatherLabel(weather.weatherCode)}</div>
         </div>
         <div className="text-right">
           <div className="text-5xl font-bold text-shadow-lg leading-none">{tempF}°F</div>
