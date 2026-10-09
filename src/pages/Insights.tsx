@@ -4,6 +4,7 @@ import { minutesToBurn, uvColor } from "@/lib/uv";
 import { GoldenHour } from "@/components/safesun/GoldenHour";
 import { Achievements } from "@/components/safesun/Achievements";
 import { Droplets, Wind, CloudRain } from "lucide-react";
+import { weatherEmoji } from "@/lib/weather";
 
 export default function Insights() {
   const { weather, skinType, beachMode, t } = useApp();
@@ -36,14 +37,14 @@ export default function Insights() {
             <h3 className="text-sm uppercase tracking-widest opacity-80 mb-3">{t("nextHoursDetail")}</h3>
             <div className="space-y-2">
               {weather.hourly.map((h, i) => {
-                const d = new Date(h.time);
-                const label = d.getHours().toString().padStart(2, "0") + ":00";
+                const label = h.time.slice(11, 16);
                 const tempF = Math.round((h.temp * 9) / 5 + 32);
                 const gustMph = Math.round(h.windGust * 0.621371);
                 return (
-                  <div key={i} className="rounded-2xl bg-white/5 border border-white/10 p-3 flex items-center justify-between gap-3">
+                  <div key={i} className="rounded-2xl bg-white/5 border border-white/10 p-3 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="text-xs font-mono opacity-80 w-12">{label}</div>
+                      <span aria-hidden="true" className="text-xl">{weatherEmoji(h.code, h.isDay)}</span>
                       <div className="text-base font-semibold">{tempF}°F</div>
                     </div>
                     <div className="flex items-center gap-3 text-xs opacity-90">

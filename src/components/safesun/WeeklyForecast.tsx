@@ -1,19 +1,6 @@
 import { useApp } from "@/contexts/AppContext";
 import { uvColor } from "@/lib/uv";
-import { weatherLabel } from "@/lib/weather";
-
-const CODE_EMOJI = (code: number): string => {
-  if (code === 0) return "☀️";
-  if (code <= 2) return "🌤️";
-  if (code === 3) return "☁️";
-  if (code <= 48) return "🌫️";
-  if (code <= 57) return "🌦️";
-  if (code <= 67) return "🌧️";
-  if (code <= 77) return "🌨️";
-  if (code <= 82) return "🌧️";
-  if (code <= 86) return "🌨️";
-  return "⛈️";
-};
+import { weatherLabel, weatherEmoji } from "@/lib/weather";
 
 export function WeeklyForecast() {
   const { weather, t, lang } = useApp();
@@ -34,7 +21,7 @@ export function WeeklyForecast() {
               <div className="w-12 text-xs font-semibold opacity-90 shrink-0">
                 {i === 0 ? t("today") : fmt.format(day)}
               </div>
-              <div className="text-lg shrink-0" title={weatherLabel(d.code)}>{CODE_EMOJI(d.code)}</div>
+              <div className="text-lg shrink-0" title={weatherLabel(d.code)}>{weatherEmoji(d.code)}</div>
               <div
                 className="text-sm font-bold w-10 text-right shrink-0 tabular-nums"
                 style={{ color: uvColor(d.uvMax) }}
